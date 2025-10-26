@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import axios from "axios"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/components/toast"
@@ -8,8 +9,8 @@ import { LogIn, Sun, Moon, Eye, EyeOff, Loader2 } from "lucide-react"
 import { useTheme } from "@/components/common/ThemeProvider"
 
 export default function LoginPage(): JSX.Element {
-  const [email, setEmail] = useState("admin@worlddoc.com")
-  const [password, setPassword] = useState("password")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(true)
@@ -21,7 +22,6 @@ export default function LoginPage(): JSX.Element {
   const { theme, toggleTheme } = useTheme()
 
   const validate = () => {
-    setError(null)
     if (!email) return "Email is required"
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailPattern.test(email)) return "Enter a valid email"
@@ -42,19 +42,27 @@ export default function LoginPage(): JSX.Element {
     setError(null)
 
     try {
-      const success = await login(email.trim(), password)
-      if (success) {
+      const { data } = await axios.post("/api/admin/login", { email, password }, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      })
+
+      if (data?.token && data?.user) {
+        login(data.user, data.token) // ✅ Correct usage
+        console.log("DATA: ",data)
         addToast("Login successful", "success")
-        if (remember) localStorage.setItem("worlddoc_remember", "true")
         router.push("/admin/topics")
       } else {
-        setError("Invalid credentials")
-        addToast("Invalid credentials", "error")
+        throw new Error("Invalid response from server")
       }
-    } catch (err) {
-      console.error(err)
-      setError("Something went wrong — please try again")
-      addToast("Something went wrong — please try again", "error")
+    } catch (err: any) {
+      console.error("Login Error:", err)
+      const message =
+        err.response?.data?.error ||
+        err.message ||
+        "Something went wrong — please try again"
+      setError(message)
+      addToast(message, "error")
     } finally {
       setLoading(false)
     }
@@ -62,13 +70,12 @@ export default function LoginPage(): JSX.Element {
 
   const fillDemo = () => {
     setEmail("admin@worlddoc.com")
-    setPassword("password")
+    setPassword("admin123")
     addToast("Filled demo credentials", "info")
   }
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-6 ${theme === "dark" ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-900"}`}>
-      {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
         aria-label="Toggle theme"
@@ -146,38 +153,37 @@ export default function LoginPage(): JSX.Element {
 
             {error && <div className="text-sm text-red-600">{error}</div>}
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 bg-primary-600 border font-medium shadow-sm disabled:opacity-60"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="animate-spin" size={16} /> <span>Signing in...</span>
-                  </>
-                ) : (
-                  <span>Sign In</span>
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 bg-primary-600 border font-medium shadow-sm disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} /> <span>Signing in...</span>
+                </>
+              ) : (
+                <span>Sign In</span>
+              )}
+            </button>
           </form>
 
           <div className="mt-6 border-t pt-4 flex items-center justify-between text-sm">
             <div>
               <p className="text-xs text-muted-foreground">Demo Credentials</p>
-              <p className="text-xs">admin@worlddoc.com / password</p>
+              <p className="text-xs">admin@worlddoc.com / admin123</p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={fillDemo} className="text-xs px-3 py-1 rounded-md border hover:bg-gray-50">Fill demo</button>
-            </div>
+            <button type="button" onClick={fillDemo} className="text-xs px-3 py-1 rounded-md border hover:bg-gray-500">
+              Fill demo
+            </button>
           </div>
 
           <div className="mt-4 text-center text-xs text-muted-foreground">
-            <p>
-              Need an account? <a href="/signup" className="text-primary-600 hover:underline">Contact the system administrator</a>
-            </p>
+            Need an account?{" "}
+            <a href="/signup" className="text-primary-600 hover:underline">
+              Contact the system administrator
+            </a>
           </div>
         </div>
       </div>

@@ -6,12 +6,14 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Menu, X, LogOut, FileText, ImageIcon, Users, LayoutDashboard } from "lucide-react"
+import { Menu, X, LogOut, FileText, ImageIcon, Users, LayoutDashboard, Sun, Moon } from "lucide-react"
+import { useTheme } from "@/components/common/ThemeProvider"
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user, logout } = useAuth()
   const router = useRouter()
+  const { theme, toggleTheme } = useTheme()
 
   const handleLogout = () => {
     logout()
@@ -23,7 +25,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-border transform transition-transform duration-300 lg:relative lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          sidebarOpen ? `translate-x-0 ${theme === "dark" ? "bg-slate-800" : "bg-white"}` : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
@@ -63,6 +65,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
         <header className="border-b border-border px-4 py-4 flex items-center justify-between lg:justify-end">
+          
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="lg:hidden p-2 hover:bg-muted rounded-md transition-colors"
@@ -70,7 +73,15 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           >
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
-          <div className="text-sm text-muted-foreground">
+          
+          <div className="text-sm text-muted-foreground flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className=" rounded-full  shadow-sm"
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",

@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null
   token: string | null
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<boolean>
+  login: (user: User, token: string) => void
   logout: () => void
 }
 
@@ -19,11 +19,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  // Check for stored auth on mount
+  // Load saved auth data on mount
   useEffect(() => {
     const storedToken = localStorage.getItem("auth-token")
     const storedUser = localStorage.getItem("auth-user")
-
     if (storedToken && storedUser) {
       setToken(storedToken)
       setUser(JSON.parse(storedUser))
@@ -31,21 +30,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const login = async (email: string, password: string) => {
-    const { mockLogin } = await import("./mock-api")
-    const result = await mockLogin(email, password)
-
-    if (result.success) {
-      setUser(result.user)
-      setToken(result.token)
-      setIsAuthenticated(true)
-      localStorage.setItem("auth-token", result.token)
-      localStorage.setItem("auth-user", JSON.stringify(result.user))
-      return true
-    }
-    return false
+  // Login (save to localStorage)
+  const login = (user: User, token: string) => {
+    setUser(user)
+    setToken(token)
+    setIsAuthenticated(true)
+    localStorage.setItem("auth-token", token)
+    localStorage.setItem("auth-user", JSON.stringify(user))
   }
 
+  // Logout (clear)
   const logout = () => {
     setUser(null)
     setToken(null)
@@ -54,13 +48,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("auth-user")
   }
 
-  return <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider")
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider")
   return context
 }
