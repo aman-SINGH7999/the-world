@@ -3,8 +3,16 @@
 import { useState, useEffect } from "react"
 import { X, Upload, Search } from "lucide-react"
 import type { MediaItem } from "@/lib/types"
-import { mockGetMedia } from "@/lib/mock-api"
 import { useTheme } from "@/components/common/ThemeProvider"
+import axios from "axios"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination"
 
 interface MediaLibraryModalProps {
   isOpen: boolean
@@ -15,8 +23,28 @@ interface MediaLibraryModalProps {
 export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryModalProps) {
   const [media, setMedia] = useState<MediaItem[]>([])
   const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [limit] = useState(1)
   const [loading, setLoading] = useState(false)
   const { theme, toggleTheme } = useTheme()
+  const totalPages = Math.ceil(total / limit)
+
+    const loadMedia = async (searchTerm = search, pageNum = page) => {
+    try {
+      setLoading(true)
+      const { data } = await axios.get(`/api/admin/media`, {
+        params: { search: searchTerm, page: pageNum, limit },
+      })
+      setMedia(data.media)
+      setTotal(data.total)
+      setLoading(false)
+    } catch (err) {
+      console.error(err)
+      // addToast("Failed to load media", "error")
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -24,12 +52,17 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
     }
   }, [isOpen])
 
-  const loadMedia = async () => {
-    setLoading(true)
-    const data = await mockGetMedia()
-    setMedia(data)
-    setLoading(false)
+   const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPage(1)
+    await loadMedia(search, 1)
   }
+
+  const handlePageChange = async (newPage: number) => {
+    setPage(newPage)
+    await loadMedia(search, newPage)
+  }
+
 
   const filteredMedia = media.filter(
     (m) =>
@@ -56,6 +89,7 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
         {/* Search */}
         <div className="p-4 border-b border-border">
           <div className="relative">
+            <form onSubmit={handleSearch} className="mb-6">
             <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
@@ -64,9 +98,12 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             />
+            </form>
           </div>
+          
         </div>
 
+        
         {/* Media Grid */}
         <div className="flex-1 overflow-auto p-4">
           {loading ? (
@@ -109,8 +146,39 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
                   </div>
                 </button>
               ))}
+              
             </div>
+            
           )}
+        </div>
+        <div className="pb-2">
+           {/* Pagination */}
+              {totalPages > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    {page > 1 && (
+                      <PaginationItem>
+                        <PaginationPrevious onClick={() => handlePageChange(page - 1)} />
+                      </PaginationItem>
+                    )}
+                    {[...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink
+                          isActive={page === i + 1}
+                          onClick={() => handlePageChange(i + 1)}
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    {page < totalPages && (
+                      <PaginationItem>
+                        <PaginationNext onClick={() => handlePageChange(page + 1)} />
+                      </PaginationItem>
+                    )}
+                  </PaginationContent>
+                </Pagination>
+              )}
         </div>
       </div>
     </div>

@@ -1,8 +1,10 @@
-import { withAdminRole } from "@/lib/middleware"
-import { type NextRequest, NextResponse } from "next/server"
+// app/api/admin/media/presign/route.ts
 import crypto from "crypto"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+// import { withAdminRole } from "@/lib/middleware" // uncomment if you want admin-only
 
-async function handlePOST(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
     const apiKey = process.env.CLOUDINARY_API_KEY
@@ -13,10 +15,18 @@ async function handlePOST(request: NextRequest) {
     }
 
     const timestamp = Math.floor(Date.now() / 1000)
-    const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || "worlddoc-admin"
+    const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || "" // optional
 
-    // Create signature for signed upload
-    const stringToSign = `timestamp=${timestamp}&upload_preset=${uploadPreset}${apiSecret}`
+    // deterministic signing using sorted params
+    const paramsToSign: Record<string, string | number> = { timestamp }
+    if (uploadPreset) paramsToSign.upload_preset = uploadPreset
+
+    const stringToSign =
+      Object.keys(paramsToSign)
+        .sort()
+        .map((k) => `${k}=${paramsToSign[k]}`)
+        .join("&") + apiSecret
+
     const signature = crypto.createHash("sha1").update(stringToSign).digest("hex")
 
     return NextResponse.json(
@@ -35,4 +45,7 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
-export const POST = withAdminRole(handlePOST)
+// If you want to protect this endpoint so only admins can presign,
+// uncomment the following and comment out the above `export`:
+// async function handlePOST(request: NextRequest) { /* same body as above */ }
+// export const POST = withAdminRole(handlePOST)

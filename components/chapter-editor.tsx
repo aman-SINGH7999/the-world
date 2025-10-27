@@ -1,46 +1,52 @@
 "use client"
 
 import { useState } from "react"
-import type { Chapter, Block } from "@/lib/types"
+import type { IChapter, IContentBlock } from "@/models/Topic"
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 
 interface ChapterEditorProps {
-  chapter: Chapter
+  chapter: IChapter
   index: number
-  onUpdate: (chapter: Chapter) => void
+  onUpdate: (chapter: IChapter) => void
   onDelete: () => void
 }
 
 export function ChapterEditor({ chapter, index, onUpdate, onDelete }: ChapterEditorProps) {
   const [expanded, setExpanded] = useState(true)
 
-  const updateChapter = (updates: Partial<Chapter>) => {
+  const updateChapter = (updates: Partial<IChapter>) => {
     onUpdate({ ...chapter, ...updates })
   }
 
-  const addBlock = (type: Block["type"]) => {
-    const newBlock: Block = {
-      id: "block-" + Date.now(),
+  const addBlock = (type: IContentBlock["type"]) => {
+    const newBlock: IContentBlock = {
+      _id: new Date().getTime().toString() as any,
       type,
-      content: "",
+      text: "",
+      items: [],
+      url: "",
     }
-    updateChapter({ blocks: [...chapter.blocks, newBlock] })
+    updateChapter({ blocks: [...(chapter.blocks || []), newBlock] })
   }
 
-  const updateBlock = (blockId: string, updates: Partial<Block>) => {
-    const updated = chapter.blocks.map((b) => (b.id === blockId ? { ...b, ...updates } : b))
-    updateChapter({ blocks: updated })
+  const updateBlock = (blockId: any, updates: Partial<IContentBlock>) => {
+    const updatedBlocks = (chapter.blocks || []).map((b) =>
+      b._id === blockId ? { ...b, ...updates } : b,
+    )
+    updateChapter({ blocks: updatedBlocks })
   }
 
-  const deleteBlock = (blockId: string) => {
-    updateChapter({ blocks: chapter.blocks.filter((b) => b.id !== blockId) })
+  const deleteBlock = (blockId: any) => {
+    updateChapter({
+      blocks: (chapter.blocks || []).filter((b) => b._id !== blockId),
+    })
   }
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="border border-gray-300 rounded-lg overflow-hidden">
       {/* Header */}
       <div
-        className="flex items-center justify-between p-4 bg-muted cursor-pointer hover:bg-gray-500 transition-colors"
+        className="flex items-center justify-between p-4  cursor-pointer transition"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3">
@@ -50,7 +56,7 @@ export function ChapterEditor({ chapter, index, onUpdate, onDelete }: ChapterEdi
             value={chapter.title}
             onChange={(e) => updateChapter({ title: e.target.value })}
             onClick={(e) => e.stopPropagation()}
-            className="font-medium text-foreground bg-transparent outline-none"
+            className="font-medium bg-transparent outline-none"
             placeholder="Chapter title"
           />
         </div>
@@ -59,69 +65,37 @@ export function ChapterEditor({ chapter, index, onUpdate, onDelete }: ChapterEdi
             e.stopPropagation()
             onDelete()
           }}
-          className="p-1 hover:bg-red-400 rounded-md transition-colors text-error"
+          className="p-1 hover:bg-red-200 rounded-md text-red-600 transition"
         >
           <Trash2 size={18} />
         </button>
       </div>
 
-      {/* Content */}
+      {/* Blocks */}
       {expanded && (
-        <div className="p-4 space-y-4 border-t border-border">
-          {/* Blocks */}
-          <div className="space-y-3">
-            {chapter.blocks.map((block) => (
-              <BlockEditor
-                key={block.id}
-                block={block}
-                onUpdate={(updates) => updateBlock(block.id, updates)}
-                onDelete={() => deleteBlock(block.id)}
-              />
-            ))}
-          </div>
+        <div className="p-4 space-y-4 border-t border-gray-200">
+          {(chapter.blocks || []).map((block) => (
+            <BlockEditor
+              key={block._id?.toString()}
+              block={block}
+              onUpdate={(updates) => updateBlock(block._id, updates)}
+              onDelete={() => deleteBlock(block._id)}
+            />
+          ))}
 
           {/* Add Block Buttons */}
-          <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
-            <button
-              type="button"
-              onClick={() => addBlock("paragraph")}
-              className="flex items-center gap-1 text-sm px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <Plus size={16} />
-              Paragraph
-            </button>
-            <button
-              type="button"
-              onClick={() => addBlock("heading")}
-              className="flex items-center gap-1 text-sm px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <Plus size={16} />
-              Heading
-            </button>
-            <button
-              type="button"
-              onClick={() => addBlock("image")}
-              className="flex items-center gap-1 text-sm px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <Plus size={16} />
-              Image
-            </button>
-            <button
-              type="button"
-              onClick={() => addBlock("video")}
-              className="flex items-center gap-1 text-sm px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <Plus size={16} />
-              Video
-            </button>
-            <button
-              type="button"
-              onClick={() => addBlock("list")}
-              className="flex items-center gap-1 text-sm px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <Plus size={16} />
-              List
-            </button>
+          <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
+            {["paragraph", "heading", "image", "video", "list", "quote", "embed"].map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => addBlock(type as IContentBlock["type"])}
+                className="flex items-center gap-1 text-sm px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+              >
+                <Plus size={16} />
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -134,56 +108,83 @@ function BlockEditor({
   onUpdate,
   onDelete,
 }: {
-  block: Block
-  onUpdate: (updates: Partial<Block>) => void
+  block: IContentBlock
+  onUpdate: (updates: Partial<IContentBlock>) => void
   onDelete: () => void
 }) {
   return (
-    <div className="p-3 border border-border rounded-lg">
+    <div className="p-3 border border-gray-200 rounded-lg shadow-sm">
       <div className="flex items-start justify-between mb-2">
-        <span className="text-xs font-medium text-muted-foreground uppercase">{block.type}</span>
-        <button onClick={onDelete} className="p-1 hover:bg-red-500 rounded-md transition-colors text-error">
+        <span className="text-xs font-medium uppercase">{block.type}</span>
+        <button
+          onClick={onDelete}
+          className="p-1 hover:bg-red-200 rounded-md text-red-600 transition"
+        >
           <Trash2 size={16} />
         </button>
       </div>
 
+      {/* Paragraph */}
       {block.type === "paragraph" && (
         <textarea
-          value={block.content}
-          onChange={(e) => onUpdate({ content: e.target.value })}
+          value={block.text || ""}
+          onChange={(e) => onUpdate({ text: e.target.value })}
           placeholder="Enter paragraph text"
           rows={3}
-          className="w-full resize-none"
+          className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
         />
       )}
 
+      {/* Heading */}
       {block.type === "heading" && (
         <input
           type="text"
-          value={block.content}
-          onChange={(e) => onUpdate({ content: e.target.value })}
+          value={block.text || ""}
+          onChange={(e) => onUpdate({ text: e.target.value })}
           placeholder="Enter heading text"
-          className="w-full"
+          className="w-full border border-gray-300 rounded-md p-2 text-sm"
         />
       )}
 
-      {(block.type === "image" || block.type === "video") && (
-        <input
-          type="url"
-          value={block.content}
-          onChange={(e) => onUpdate({ content: e.target.value })}
-          placeholder="Enter media URL"
-          className="w-full"
+      {/* Image / Video / Embed */}
+      {(block.type === "image" || block.type === "video" || block.type === "embed") && (
+        <>
+          <input
+            type="url"
+            value={block.url || ""}
+            onChange={(e) => onUpdate({ url: e.target.value })}
+            placeholder="Enter media URL"
+            className="w-full border border-gray-300 rounded-md p-2 text-sm mb-2"
+          />
+          <input
+            type="text"
+            value={block.caption || ""}
+            onChange={(e) => onUpdate({ caption: e.target.value })}
+            placeholder="Caption (optional)"
+            className="w-full border border-gray-300 rounded-md p-2 text-sm"
+          />
+        </>
+      )}
+
+      {/* Quote */}
+      {block.type === "quote" && (
+        <textarea
+          value={block.text || ""}
+          onChange={(e) => onUpdate({ text: e.target.value })}
+          placeholder="Enter quote text"
+          rows={3}
+          className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
         />
       )}
 
+      {/* List */}
       {block.type === "list" && (
         <textarea
-          value={block.content}
-          onChange={(e) => onUpdate({ content: e.target.value })}
+          value={(block.items || []).join("\n")}
+          onChange={(e) => onUpdate({ items: e.target.value.split("\n") })}
           placeholder="Enter list items (one per line)"
           rows={3}
-          className="w-full resize-none"
+          className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none"
         />
       )}
     </div>

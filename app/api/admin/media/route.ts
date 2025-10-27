@@ -1,3 +1,5 @@
+// app/api/admin/media/route.ts
+
 import { connectDB } from "@/lib/db"
 import { withAdminRole } from "@/lib/middleware"
 import { Media } from "@/models/Media"
@@ -10,17 +12,31 @@ async function handleGET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get("type")
     const provider = searchParams.get("provider")
+    const search = searchParams.get("search") || ""
 
+    const page = Number(searchParams.get("page")) || 1
+    const limit = Number(searchParams.get("limit")) || 12
+
+    // ✅ Build query
     const query: any = {}
     if (type) query.type = type
     if (provider) query.provider = provider
+    if (search) {
+      query.$or = [
+        { caption: { $regex: search, $options: "i" } },
+        { altText: { $regex: search, $options: "i" } },
+      ]
+    }
 
     const media = await Media.find(query)
       .select("_id type url provider thumbnailUrl caption altText uploadedAt")
       .sort({ uploadedAt: -1 })
-      .lean()
+      .skip((page - 1) * limit)
+      .limit(limit)
 
-    return NextResponse.json({ media }, { status: 200 })
+    const total = await Media.countDocuments(query)
+    return NextResponse.json({ media, total, page, limit }, { status: 200 })
+
   } catch (error) {
     console.error("[Media GET Error]", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
@@ -34,7 +50,7 @@ async function handlePOST(request: NextRequest) {
     const user = (request as any).user
     const body = await request.json()
 
-    const { type, url, provider, thumbnailUrl, caption, altText, credit, license } = body
+    const { type, url, provider, thumbnailUrl, caption, altText } = body
 
     if (!type || !url || !provider) {
       return NextResponse.json({ error: "Type, URL, and provider are required" }, { status: 400 })
@@ -47,8 +63,6 @@ async function handlePOST(request: NextRequest) {
       thumbnailUrl: thumbnailUrl || undefined,
       caption: caption || undefined,
       altText: altText || undefined,
-      credit: credit || undefined,
-      license: license || undefined,
       uploadedBy: user.userId,
       uploadedAt: new Date(),
       processing: {

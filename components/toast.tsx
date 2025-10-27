@@ -62,7 +62,7 @@ function ToastContainer({ toasts, onRemove }: { toasts: ToastMessage[]; onRemove
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg text-white shadow-lg animate-in fade-in slide-in-from-right-4 ${
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-in fade-in slide-in-from-right-4 ${
             toast.type === "success" ? "bg-success" : toast.type === "error" ? "bg-error" : "bg-secondary"
           }`}
         >
