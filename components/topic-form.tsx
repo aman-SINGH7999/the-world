@@ -11,12 +11,10 @@ import { MediaLibraryModal } from "./media-library-modal"
 import { ConfirmModal } from "./confirm-modal"
 import { ChapterEditor } from "./chapter-editor"
 import { Plus } from "lucide-react"
-
-// Mock API (replace later with real API)
-import { mockCreateTopic, mockUpdateTopic } from "@/lib/mock-api"
+import axios from "axios"
 
 interface TopicFormProps {
-  initialTopic?: ITopic
+  initialTopic?: ITopic;
 }
 
 export function TopicForm({ initialTopic }: TopicFormProps) {
@@ -60,9 +58,11 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
     setSaving(true)
     try {
       if (initialTopic?._id) {
-        await mockUpdateTopic(initialTopic._id, { ...formData, status: "draft" })
+        const { data } = await axios.put(`/api/admin/topics/${initialTopic._id}`, { ...formData, status: "draft" }, {withCredentials:true})
+        console.log("Data: ", data);
       } else {
-        await mockCreateTopic({ ...formData, status: "draft" })
+        const { data } = await axios.post("/api/admin/topics",{ ...formData, status: "draft" }, {withCredentials:true})
+        console.log("Data: ", data);
       }
       addToast("Topic saved as draft", "success")
       router.push("/admin/topics")
@@ -82,9 +82,11 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
     setSaving(true)
     try {
       if (initialTopic?._id) {
-        await mockUpdateTopic(initialTopic._id, { ...formData, status: "published" })
+        const { data } = await axios.put(`/api/admin/topics/${initialTopic._id}`, { ...formData, status: "published" }, {withCredentials:true})
+        console.log("Data: ", data);
       } else {
-        await mockCreateTopic({ ...formData, status: "published" })
+        const { data } = await axios.post("/api/admin/topics",{ ...formData, status: "published" }, {withCredentials:true})
+        console.log("Data: ", data);
       }
       addToast("Topic published successfully", "success")
       router.push("/admin/topics")
@@ -211,12 +213,12 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
           <TagInput
             label="Category"
             value={formData.category || []}
-            onChange={(tags) => handleInputChange("category", tags)}
+            onChange={(category) => handleInputChange("category", category)}
           />
           <TagInput
             label="Key Points"
             value={formData.keyPoints || []}
-            onChange={(tags) => handleInputChange("keyPoints", tags)}
+            onChange={(keyPoints) => handleInputChange("keyPoints", keyPoints)}
           />
         </div>
       </section>
