@@ -158,6 +158,15 @@ export default function MediaPage() {
                       >
                         Copy URL
                       </button>
+                      {/* <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(item._id)
+                          addToast("ID copied to clipboard", "success")
+                        }}
+                        className="flex-1 btn-secondary text-sm bg-black/20 rounded-md"
+                      >
+                        Copy Id
+                      </button> */}
                       <button
                         onClick={() => handleDelete(item._id)}
                         className="p-2 hover:bg-red-100 rounded-md transition-colors text-error"
