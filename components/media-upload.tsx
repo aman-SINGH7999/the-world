@@ -109,38 +109,43 @@ export function MediaUpload({ onUploadComplete }: MediaUploadProps) {
       setProgress(0)
       setUploading(false)
       addToast("Media uploaded successfully", "success")
-    } catch (error: any) {
-      // Robust error handling: log full object, and derive a string message for UI
+    } catch (error) {
       console.error("Upload error full:", error)
-      console.error("Upload error response data:", error?.response?.data)
 
-      const cloudErrObj = error?.response?.data?.error
-      console.error("Cloudinary error object:", cloudErrObj)
-      try {
-        console.error("Cloudinary error (pretty):", JSON.stringify(cloudErrObj, null, 2))
-      } catch (e) {
-        // ignore stringify error
+      // ✅ Narrow `error` type safely
+      if (axios.isAxiosError(error)) {
+        // Agar AxiosError hai to ye safe hai
+        console.error("Upload error response data:", error.response?.data)
+
+        const cloudErrObj = error.response?.data?.error
+        console.error("Cloudinary error object:", cloudErrObj)
+
+        let message = "Upload failed"
+        if (typeof cloudErrObj === "string") {
+          message = cloudErrObj
+        } else if (cloudErrObj?.message) {
+          message = String(cloudErrObj.message)
+        } else if (error.message) {
+          message = error.message
+        }
+
+        setUploading(false)
+        addToast(message, "error")
+        return
       }
 
-      // Derive message string (always pass a string to toast)
-      let message = "Upload failed"
-      if (!cloudErrObj && error?.message) {
-        message = String(error.message)
-      } else if (typeof cloudErrObj === "string") {
-        message = cloudErrObj
-      } else if (cloudErrObj?.message) {
-        message = String(cloudErrObj.message)
+      // ✅ Fallback for non-Axios errors
+      if (error instanceof Error) {
+        console.error("Generic JS error:", error.message)
+        addToast(error.message, "error")
       } else {
-        try {
-          message = JSON.stringify(error?.response?.data)
-        } catch (e) {
-          message = "Upload failed (unknown error)"
-        }
+        console.error("Unknown error:", error)
+        addToast("Upload failed (unknown error)", "error")
       }
 
       setUploading(false)
-      addToast(message, "error")
     }
+
   }
 
   return (

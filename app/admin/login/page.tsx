@@ -55,12 +55,21 @@ export default function LoginPage() {
       } else {
         throw new Error("Invalid response from server")
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Login Error:", err)
-      const message =
-        err.response?.data?.error ||
-        err.message ||
-        "Something went wrong — please try again"
+
+      let message = "Something went wrong — please try again"
+
+      // ✅ Axios error check (official helper)
+      if (axios.isAxiosError(err)) {
+        message =
+          err.response?.data?.error ||
+          err.message ||
+          message
+      } else if (err instanceof Error) {
+        message = err.message
+      }
+
       setError(message)
       addToast(message, "error")
     } finally {

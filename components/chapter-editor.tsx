@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { IChapter, IContentBlock } from "@/models/Topic"
+import type { IChapter, IContentBlock } from "@/lib/types"
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 
 interface ChapterEditorProps {
@@ -20,7 +20,7 @@ export function ChapterEditor({ chapter, index, onUpdate, onDelete }: ChapterEdi
 
   const addBlock = (type: IContentBlock["type"]) => {
     const newBlock: IContentBlock = {
-      _id: new Date().getTime().toString() as any,
+      _id: new Date().getTime().toString(),
       type,
       text: "",
       items: [],
@@ -29,14 +29,14 @@ export function ChapterEditor({ chapter, index, onUpdate, onDelete }: ChapterEdi
     updateChapter({ blocks: [...(chapter.blocks || []), newBlock] })
   }
 
-  const updateBlock = (blockId: any, updates: Partial<IContentBlock>) => {
+  const updateBlock = (blockId: string, updates: Partial<IContentBlock>) => {
     const updatedBlocks = (chapter.blocks || []).map((b) =>
       b._id === blockId ? { ...b, ...updates } : b,
     )
     updateChapter({ blocks: updatedBlocks })
   }
 
-  const deleteBlock = (blockId: any) => {
+  const deleteBlock = (blockId: string) => {
     updateChapter({
       blocks: (chapter.blocks || []).filter((b) => b._id !== blockId),
     })
@@ -78,8 +78,8 @@ export function ChapterEditor({ chapter, index, onUpdate, onDelete }: ChapterEdi
             <BlockEditor
               key={block._id?.toString()}
               block={block}
-              onUpdate={(updates) => updateBlock(block._id, updates)}
-              onDelete={() => deleteBlock(block._id)}
+              onUpdate={(updates) => updateBlock(block._id ?? "", updates)}
+              onDelete={() => deleteBlock(block._id ?? "")}
             />
           ))}
 

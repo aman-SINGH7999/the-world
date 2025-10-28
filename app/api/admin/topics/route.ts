@@ -1,10 +1,10 @@
 import { connectDB } from "@/lib/db";
 import { withAdminRole } from "@/lib/middleware";
-import { Topic } from "@/models/Topic";
+import { Topic, type ITopic, type IChapter, type IContentBlock, type ISourceSimple } from "@/models/Topic";
 import { type NextRequest, NextResponse } from "next/server";
 import mongoose from "mongoose";
 
-// slugify utility
+// Utility to make slugs
 function makeSlug(input: string) {
   return input
     .toLowerCase()
@@ -14,47 +14,33 @@ function makeSlug(input: string) {
     .replace(/--+/g, "-");
 }
 
-
-// ---------- GET (pagination + title search + filters) ----------
+// ---------- GET (pagination + search + filters) ----------
 async function handleGET(request: NextRequest) {
   try {
     await connectDB();
     const { searchParams } = new URL(request.url);
 
-    // filters
     const status = searchParams.get("status") || undefined;
-    const q = searchParams.get("q") || undefined; // search term
+    const q = searchParams.get("q") || undefined;
     const category = searchParams.get("category") || undefined;
     const timeline = searchParams.get("timeline") || undefined;
     const era = searchParams.get("era") || undefined;
     const location = searchParams.get("location") || undefined;
 
-    // pagination params
-    const pageRaw = parseInt(searchParams.get("page") || "1", 10);
-    const limitRaw = parseInt(searchParams.get("limit") || "20", 10);
-
-    const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
-    const MAX_LIMIT = 100;
-    const limit =
-      Number.isFinite(limitRaw) && limitRaw > 0
-        ? Math.min(limitRaw, MAX_LIMIT)
-        : 20;
-
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
     const skip = (page - 1) * limit;
 
-    // build query
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (status) query.status = status;
     if (category) {
       const cats = category.split(",").map((s) => s.trim()).filter(Boolean);
-      if (cats.length === 1) query.category = cats[0];
-      else if (cats.length > 1) query.category = { $in: cats };
+      query.category = cats.length > 1 ? { $in: cats } : cats[0];
     }
     if (timeline) query.timeline = timeline;
     if (era) query.era = era;
     if (location) query.location = location;
 
-    // search logic — title partial match (case-insensitive)
     if (q && q.trim()) {
       query.$or = [
         { title: { $regex: q.trim(), $options: "i" } },
@@ -64,10 +50,7 @@ async function handleGET(request: NextRequest) {
       ];
     }
 
-    // total count (matching filters)
     const total = await Topic.countDocuments(query);
-
-    // fetch page
     const topics = await Topic.find(query)
       .select("_id title slug summary status publishedAt createdAt updatedAt")
       .sort({ createdAt: -1 })
@@ -77,68 +60,58 @@ async function handleGET(request: NextRequest) {
 
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
-    return NextResponse.json(
-      {
-        topics,
-        total,
-        totalPages,
-        page,
-        limit,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ topics, total, totalPages, page, limit }, { status: 200 });
   } catch (err) {
     console.error("[Topics GET Error]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-
 // ---------- POST ----------
 async function handlePOST(request: NextRequest) {
   try {
     await connectDB();
-    const user = (request as any).user;
-    const body = await request.json();
+    const reqBody = await request.json();
+
+    const user = (request as unknown as { user?: { userId?: string } }).user;
 
     const {
       title,
       slug: rawSlug,
       summary,
+      overview,
+      subtitle,
+      chapters = [],
+      sources = [],
+      keyPoints = [],
+      category = [],
+      extraInfo = {},
       heroMediaUrl,
       heroMediaId,
-      chapters,
-      sources,
-      keyPoints,
-      extraInfo,
-      status,
-    } = body;
+      status = "draft",
+      metaTitle,
+      metaDescription,
+    } = reqBody as Partial<ITopic> & { heroMediaId?: string };
 
-    if (!title || !summary) {
-      return NextResponse.json(
-        { error: "Title and summary are required" },
-        { status: 400 }
-      );
+    if (!title?.trim() || !summary?.trim()) {
+      return NextResponse.json({ error: "Title and summary are required" }, { status: 400 });
     }
 
     const slug = rawSlug ? makeSlug(rawSlug) : makeSlug(title);
-
     const existing = await Topic.findOne({ slug });
     if (existing) {
       return NextResponse.json({ error: "Slug already exists" }, { status: 400 });
     }
 
-    // normalize blocks & chapters
-    const makeClientBlockId = () =>
-      `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const makeClientBlockId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-    const normalizedChapters = Array.isArray(chapters)
-      ? chapters.map((ch: any, idx: number) => ({
+    const normalizedChapters: IChapter[] = Array.isArray(chapters)
+      ? chapters.map((ch, idx) => ({
           title: ch?.title?.trim() || `Chapter ${idx + 1}`,
           subtitle: ch?.subtitle || "",
           order: typeof ch?.order === "number" ? ch.order : idx,
           blocks: Array.isArray(ch?.blocks)
-            ? ch.blocks.map((b: any) => ({
+            ? ch.blocks.map((b: IContentBlock) => ({
                 _id: b?._id ? String(b._id) : makeClientBlockId(),
                 type: b?.type || "paragraph",
                 text: b?.text || "",
@@ -150,44 +123,56 @@ async function handlePOST(request: NextRequest) {
               }))
             : [],
           media: Array.isArray(ch?.media)
-            ? ch.media.map((m: any) =>
-                mongoose.Types.ObjectId.isValid(m) ? new mongoose.Types.ObjectId(m) : undefined
-              )
+            ? ch.media
+                .map((m) => {
+                  if (typeof m === "string" && mongoose.Types.ObjectId.isValid(m)) {
+                    return new mongoose.Types.ObjectId(m);
+                  }
+                  if (m instanceof mongoose.Types.ObjectId) {
+                    return m;
+                  }
+                  return undefined;
+                })
+                .filter((m): m is mongoose.Types.ObjectId => !!m)
             : [],
         }))
       : [];
 
-    const cleanSources = Array.isArray(sources)
+    const cleanSources: ISourceSimple[] = Array.isArray(sources)
       ? sources
-          .filter((s: any) => s?.title?.trim())
-          .map((s: any) => ({
+          .filter((s): s is ISourceSimple => !!s?.title?.trim())
+          .map((s) => ({
             title: s.title.trim(),
-            url: s.url ? s.url.trim() : undefined,
+            url: s.url?.trim(),
           }))
       : [];
 
-    const topicData: any = {
+    const topicData: Partial<ITopic> & { createdBy?: mongoose.Types.ObjectId; updatedBy?: mongoose.Types.ObjectId } = {
       title: title.trim(),
       slug,
       summary,
-      overview: body.overview || "",
-      subtitle: body.subtitle || "",
+      overview,
+      subtitle,
       chapters: normalizedChapters,
       sources: cleanSources,
-      keyPoints: Array.isArray(keyPoints) ? keyPoints : [],
-      category: Array.isArray(body.category) ? body.category : [],
-      extraInfo: extraInfo || {},
-      heroMediaUrl: heroMediaUrl || "",
-      status: status === "published" ? "published" : "draft",
-      createdBy: user?.userId,
-      updatedBy: user?.userId,
+      keyPoints,
+      category,
+      extraInfo,
+      heroMediaUrl,
+      status,
+      metaTitle,
+      metaDescription,
+      createdBy: user?.userId ? new mongoose.Types.ObjectId(user.userId) : undefined,
+      updatedBy: user?.userId ? new mongoose.Types.ObjectId(user.userId) : undefined,
     };
 
     if (heroMediaId) {
-      topicData.extraInfo.heroMediaId = heroMediaId;
+      topicData.extraInfo = { ...extraInfo, heroMediaId };
     }
 
-    if (status === "published") topicData.publishedAt = new Date();
+    if (status === "published") {
+      topicData.publishedAt = new Date();
+    }
 
     const topic = new Topic(topicData);
     await topic.save();

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { ITopic } from "@/models/Topic"
+import type { ITopic} from "@/lib/types"
 import { TopicForm } from "@/components/topic-form"
 import axios from "axios"
 

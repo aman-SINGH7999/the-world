@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/pagination"
 
 const DEFAULT_LIMIT = 20
-const MAX_LIMIT = 100
 
 export default function TopicsPage() {
   const [topics, setTopics] = useState<ITopic[]>([])
@@ -61,9 +60,13 @@ export default function TopicsPage() {
       // sync page/limit from server if provided
       if (typeof data.page === "number") setPage(data.page)
       if (typeof data.limit === "number") setLimit(data.limit)
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load topics", err)
-      setError(err?.response?.data?.error || "Failed to load topics")
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error || err.message || "Failed to load topics")
+      } else {
+        setError("Unexpected error occurred while loading topics")
+      }
       setTopics([])
       setTotal(0)
     } finally {
@@ -98,9 +101,13 @@ export default function TopicsPage() {
       // naive reload:
       await loadTopics()
       setDeleteConfirm({ isOpen: false })
-    } catch (err: any) {
+    }catch (err) {
       console.error("Failed to delete topic", err)
-      addToast(err?.response?.data?.error || "Failed to delete topic", "error")
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error || err.message
+        : "Unexpected error occurred while deleting topic"
+
+      addToast(message, "error")
       setDeleteConfirm({ isOpen: false })
       setLoading(false)
     }

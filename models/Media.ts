@@ -2,6 +2,7 @@
 import mongoose, { Schema, type Document } from "mongoose";
 
 export interface IMedia extends Document {
+  _id: string;
   type: "image" | "video" | "audio" | "embed";
   url: string;
   provider: "cloudinary" | "youtube" | "vimeo" | "other";

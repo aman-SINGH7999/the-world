@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import type { ITopic, IChapter, ISourceSimple } from "@/models/Topic"
+import type { ITopic, IChapter, ISourceSimple } from "@/lib/types"
 import { useToast } from "./toast"
 import { SlugInput } from "./slug-input"
 import { TagInput } from "./tag-input"
@@ -12,6 +12,8 @@ import { ConfirmModal } from "./confirm-modal"
 import { ChapterEditor } from "./chapter-editor"
 import { Plus } from "lucide-react"
 import axios from "axios"
+import Image from "next/image"
+
 
 interface TopicFormProps {
   initialTopic?: ITopic;
@@ -67,6 +69,7 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
       addToast("Topic saved as draft", "success")
       router.push("/admin/topics")
     } catch (error) {
+      console.log(error)
       addToast("Failed to save topic", "error")
     } finally {
       setSaving(false)
@@ -91,6 +94,7 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
       addToast("Topic published successfully", "success")
       router.push("/admin/topics")
     } catch (error) {
+      console.log(error);
       addToast("Failed to publish topic", "error")
     } finally {
       setSaving(false)
@@ -239,13 +243,18 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
         {formData.heroMediaUrl && (
           <div className="mt-4">
             <p className="text-sm text-gray-600 mb-2">Preview:</p>
-            <img
-              src={formData.heroMediaUrl}
-              alt="Hero"
-              className="w-full max-w-md rounded-lg border border-gray-300 object-cover"
-            />
+            <div className="relative w-full max-w-md h-64">
+              <Image
+                src={formData.heroMediaUrl}
+                alt="Hero preview"
+                fill
+                className="object-cover rounded-lg border border-gray-300"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </div>
           </div>
         )}
+
       </section>
 
       {/* Sources */}

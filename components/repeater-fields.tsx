@@ -4,7 +4,7 @@ import { Plus, X } from "lucide-react"
 
 interface RepeaterItem {
   title: string
-  url: string
+  url?: string
 }
 
 interface RepeaterFieldsProps {

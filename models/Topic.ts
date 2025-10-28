@@ -172,3 +172,4 @@ TopicSchema.methods.publish = async function (userId?: mongoose.Types.ObjectId) 
 
 export const Topic =
   mongoose.models.Topic || mongoose.model<ITopic>("Topic", TopicSchema);
+
