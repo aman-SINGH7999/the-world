@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 import type { User } from "./types"
 
 interface AuthContextType {
@@ -15,27 +15,44 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem("auth-token"))
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem("auth-user")
-    return stored ? JSON.parse(stored) : null
+  const [user, setUser] = useState<User | null>(null)
+  const [token, setToken] = useState<string | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  // ✅ Load from localStorage only on client
+  useEffect(() => {
+  if (typeof window === "undefined") return
+
+  // Run inside a microtask to avoid synchronous re-render
+  Promise.resolve().then(() => {
+    const storedToken = localStorage.getItem("auth-token")
+    const storedUser = localStorage.getItem("auth-user")
+
+    if (storedToken) setToken(storedToken)
+    if (storedUser) setUser(JSON.parse(storedUser))
+    setIsAuthenticated(!!storedToken)
   })
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("auth-token"))
+}, [])
+
 
   const login = (user: User, token: string) => {
     setUser(user)
     setToken(token)
     setIsAuthenticated(true)
-    localStorage.setItem("auth-token", token)
-    localStorage.setItem("auth-user", JSON.stringify(user))
+    if (typeof window !== "undefined") {
+      localStorage.setItem("auth-token", token)
+      localStorage.setItem("auth-user", JSON.stringify(user))
+    }
   }
 
   const logout = () => {
     setUser(null)
     setToken(null)
     setIsAuthenticated(false)
-    localStorage.removeItem("auth-token")
-    localStorage.removeItem("auth-user")
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth-token")
+      localStorage.removeItem("auth-user")
+    }
   }
 
   return (

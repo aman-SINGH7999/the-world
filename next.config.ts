@@ -2,7 +2,19 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["res.cloudinary.com", /* add other hosts if needed */],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**", // allow all https domains
+      },
+      {
+        protocol: "http",
+        hostname: "**", // (optional) allow http too
+      },
+    ],
+    // Optional: disable strict optimization if image URLs are unpredictable
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   // ...other config
 };
