@@ -2,24 +2,33 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import type { Topic } from "@/lib/types"
-import { mockGetTopic } from "@/lib/mock-api"
+import { ITopic } from "@/models/Topic"
 import { TopicForm } from "@/components/topic-form"
+import axios from "axios"
 
 export default function EditTopicPage() {
   const params = useParams()
-  const [topic, setTopic] = useState<Topic | null>(null)
+  const [topic, setTopic] = useState<ITopic | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const loadTopic = async () => {
-      const data = await mockGetTopic(params.id as string)
-      setTopic(data || null)
+  console.log("Id: ", params)
+
+  const loadTopic = async () => {
+    try {
+      const { data } = await axios.get(`/api/admin/topics/${params.id}`)
+      setTopic(data.topic)
+    } catch (err) {
+      console.error("Failed to load topic", err)
+      setTopic(null)
+    } finally {
       setLoading(false)
     }
+  }
 
-    loadTopic()
-  }, [params.id])
+
+  useEffect(() => {
+     if (params?.id) loadTopic()
+  }, [params?.id])
 
   if (loading) {
     return <p className="text-muted-foreground">Loading topic...</p>

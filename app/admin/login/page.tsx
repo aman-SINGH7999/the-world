@@ -8,7 +8,7 @@ import { useToast } from "@/components/toast"
 import { LogIn, Sun, Moon, Eye, EyeOff, Loader2 } from "lucide-react"
 import { useTheme } from "@/components/common/ThemeProvider"
 
-export default function LoginPage(): JSX.Element {
+export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)

@@ -14,27 +14,85 @@ function makeSlug(input: string) {
     .replace(/--+/g, "-");
 }
 
-// ---------- GET ----------
+
+// ---------- GET (pagination + title search + filters) ----------
 async function handleGET(request: NextRequest) {
   try {
     await connectDB();
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
 
+    // filters
+    const status = searchParams.get("status") || undefined;
+    const q = searchParams.get("q") || undefined; // search term
+    const category = searchParams.get("category") || undefined;
+    const timeline = searchParams.get("timeline") || undefined;
+    const era = searchParams.get("era") || undefined;
+    const location = searchParams.get("location") || undefined;
+
+    // pagination params
+    const pageRaw = parseInt(searchParams.get("page") || "1", 10);
+    const limitRaw = parseInt(searchParams.get("limit") || "20", 10);
+
+    const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
+    const MAX_LIMIT = 100;
+    const limit =
+      Number.isFinite(limitRaw) && limitRaw > 0
+        ? Math.min(limitRaw, MAX_LIMIT)
+        : 20;
+
+    const skip = (page - 1) * limit;
+
+    // build query
     const query: any = {};
     if (status) query.status = status;
+    if (category) {
+      const cats = category.split(",").map((s) => s.trim()).filter(Boolean);
+      if (cats.length === 1) query.category = cats[0];
+      else if (cats.length > 1) query.category = { $in: cats };
+    }
+    if (timeline) query.timeline = timeline;
+    if (era) query.era = era;
+    if (location) query.location = location;
 
+    // search logic — title partial match (case-insensitive)
+    if (q && q.trim()) {
+      query.$or = [
+        { title: { $regex: q.trim(), $options: "i" } },
+        { summary: { $regex: q.trim(), $options: "i" } },
+        { "chapters.blocks.text": { $regex: q.trim(), $options: "i" } },
+        { "sources.title": { $regex: q.trim(), $options: "i" } },
+      ];
+    }
+
+    // total count (matching filters)
+    const total = await Topic.countDocuments(query);
+
+    // fetch page
     const topics = await Topic.find(query)
       .select("_id title slug summary status publishedAt createdAt updatedAt")
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
 
-    return NextResponse.json({ topics }, { status: 200 });
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return NextResponse.json(
+      {
+        topics,
+        total,
+        totalPages,
+        page,
+        limit,
+      },
+      { status: 200 }
+    );
   } catch (err) {
     console.error("[Topics GET Error]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
 
 // ---------- POST ----------
 async function handlePOST(request: NextRequest) {
@@ -152,5 +210,5 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
-export const GET = withAdminRole(handleGET);
+export const GET = handleGET;
 export const POST = withAdminRole(handlePOST);

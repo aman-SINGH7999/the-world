@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import type { User } from "@/lib/types"
-import { mockGetUsers, mockUpdateUserRole } from "@/lib/mock-api"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/components/toast"
+import axios from "axios"
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
@@ -13,32 +13,25 @@ export default function UsersPage() {
   const { addToast } = useToast()
 
   useEffect(() => {
-    if (currentUser?.role !== "superadmin") {
-      return
-    }
 
     const loadUsers = async () => {
       setLoading(false)
-      const data = await mockGetUsers()
-      setUsers(data)
-      setLoading(false)
+      try{
+        const { data } = await axios.get('/api/admin/users')
+        setUsers(data.users)
+      }catch(err){
+        console.log("Error in getting users",err)
+      }finally{
+        setLoading(false)
+      }
     }
 
     loadUsers()
   }, [currentUser])
 
-  if (currentUser?.role !== "superadmin") {
-    return (
-      <div className="card">
-        <p className="text-error">You do not have permission to access this page.</p>
-      </div>
-    )
-  }
-
   const handleRoleChange = async (userId: string, newRole: string) => {
-    await mockUpdateUserRole(userId, newRole)
-    setUsers(users.map((u) => (u.id === userId ? { ...u, role: newRole as any } : u)))
-    addToast("User role updated", "success")
+    console.log(userId,newRole)
+    addToast("Currently not implemented", "success")
   }
 
   return (

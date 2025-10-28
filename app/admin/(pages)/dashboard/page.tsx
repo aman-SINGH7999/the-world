@@ -1,44 +1,60 @@
 "use client"
 
-import type React from "react"
-
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import { FileText, ImageIcon, Users } from "lucide-react"
-import { mockGetTopics, mockGetMedia, mockGetUsers } from "@/lib/mock-api"
 import { useAuth } from "@/lib/auth-context"
+import axios from "axios"
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({ topics: 0, drafts: 0, media: 0, users: 0 })
+  const [stats, setStats] = useState({ topics: 0, published: 0, media: 0, users: 0 })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { user } = useAuth()
 
   useEffect(() => {
-    const loadStats = async () => {
-      const topics = await mockGetTopics()
-      const media = await mockGetMedia()
-      const users = user?.role === "superadmin" ? await mockGetUsers() : []
+    let mounted = true
 
-      setStats({
-        topics: topics.length,
-        drafts: topics.filter((t) => t.status === "draft").length,
-        media: media.length,
-        users: users.length,
-      })
-      setLoading(false)
+    const loadStats = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const { data } = await axios.get("/api/admin/dashboard")
+        if (!mounted) return
+        setStats((prev) => ({
+          ...prev,
+          users: typeof data.allUsers === "number" ? data.allUsers : prev.users,
+          media: typeof data.allMedia === "number" ? data.allMedia : prev.media,
+          topics: typeof data.allTopics === "number" ? data.allTopics : prev.topics,
+          published: typeof data.publishedTopics === "number" ? data.publishedTopics : prev.published,
+        }))
+      } catch (err) {
+        console.error("Failed to load dashboard stats", err)
+        if (mounted) setError("Failed to load dashboard stats")
+      } finally {
+        if (mounted) setLoading(false)
+      }
     }
 
     loadStats()
+
+    return () => {
+      mounted = false
+    }
   }, [user])
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-foreground mb-8">Dashboard</h1>
 
+      {/* optionally show loading / error */}
+      {loading && <p className="text-muted-foreground mb-4">Loading stats...</p>}
+      {error && <p className="text-error mb-4">{error}</p>}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={<FileText size={24} />} label="Total Topics" value={stats.topics} href="/admin/topics" />
-        <StatCard icon={<FileText size={24} />} label="Draft Topics" value={stats.drafts} href="/admin/topics" />
+        <StatCard icon={<FileText size={24} />} label="Published Topics" value={stats.published} href="/admin/topics" />
         <StatCard icon={<ImageIcon size={24} />} label="Media Items" value={stats.media} href="/admin/media" />
         {user?.role === "superadmin" && (
           <StatCard icon={<Users size={24} />} label="Users" value={stats.users} href="/admin/users" />
@@ -88,7 +104,7 @@ function StatCard({
   href: string
 }) {
   return (
-    <Link href={href} className="card hover:border-primary transition-colors cursor-pointer">
+    <Link href={href} className="card hover:border-primary transition-colors cursor-pointer border px-5 py-10 rounded-lg">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-muted-foreground text-sm">{label}</p>
