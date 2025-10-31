@@ -90,6 +90,7 @@ export interface IContentBlock {
 
 // Represents a chapter of a topic
 export interface IChapter {
+  _id?: string
   title: string
   subtitle?: string
   order?: number

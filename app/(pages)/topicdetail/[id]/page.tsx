@@ -505,7 +505,7 @@ export default function TopicDetailPage({ topicId }: TopicDetailPageProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <ChapterAccordion chapters={mockChapters} />
+              <ChapterAccordion chapters={ topic?.chapters || mockChapters} />
             </motion.section>
 
             <Separator className={theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'} />

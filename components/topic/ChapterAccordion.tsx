@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { ChevronDown, PlayCircle } from 'lucide-react';
+import { IChapter, IContentBlock } from '@/lib/types';
 import {
   Accordion,
   AccordionContent,
@@ -21,64 +22,55 @@ export interface ChapterSection {
   level?: number; // For headings (h3, h4, h5)
 }
 
-export interface Chapter {
-  id: string;
-  number: number;
-  title: string;
-  duration: string;
-  sections: ChapterSection[];
-  hasVideo?: boolean;
-}
+
 
 interface ChapterAccordionProps {
-  chapters: Chapter[];
+  chapters: IChapter[];
 }
 
 export function ChapterAccordion({ chapters }: ChapterAccordionProps) {
   const { theme } = useTheme();
 
-  const renderSection = (section: ChapterSection, index: number) => {
-    switch (section.type) {
+  const renderSection = (block: IContentBlock) => {
+    switch (block?.type) {
       case 'heading':
-        const HeadingTag = `h${section.level || 3}` as keyof JSX.IntrinsicElements;
+        const HeadingTag = `h${3}`;
         return (
           <HeadingTag
-            key={index}
-            className={`${
-              section.level === 3 ? 'text-2xl' : section.level === 4 ? 'text-xl' : 'text-lg'
-            } ${theme === 'dark' ? 'text-white' : 'text-slate-900'} mt-6 mb-3`}
+            key={block?._id}
+            className={`${theme === 'dark' ? 'text-white' : 'text-slate-900'} mt-6 mb-3`}
           >
-            {section.content}
+            {block?.text}
           </HeadingTag>
         );
 
-      case 'text':
+      case 'paragraph':
         return (
           <p
-            key={index}
+            key={block?._id}
             className={`${
               theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
             } leading-relaxed mb-4`}
           >
-            {section.content}
+            {block?.text}
           </p>
         );
 
       case 'image':
         return (
-          <div key={index} className="my-6">
+          <div key={block?._id} className="my-6">
             <ImageWithFallback
-              src={section.content}
-              alt={section.caption || 'Chapter image'}
+              src={block?.url}
+              alt={block?.caption || 'Chapter image'}
               className="w-full rounded-lg object-cover max-h-96"
             />
-            {section.caption && (
+            {block.caption && (
               <p
                 className={`text-sm italic mt-2 ${
                   theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
                 }`}
               >
-                {section.caption}
+                {block.caption}
               </p>
             )}
           </div>
@@ -92,15 +84,15 @@ export function ChapterAccordion({ chapters }: ChapterAccordionProps) {
           return match && match[2].length === 11 ? match[2] : null;
         };
 
-        const videoId = getYouTubeId(section.content);
+        const videoId = getYouTubeId(block?.url || "");
 
         return (
-          <div key={index} className="my-6">
+          <div key={block?._id} className="my-6">
             <div className="relative w-full aspect-video rounded-lg overflow-hidden">
               {videoId ? (
                 <iframe
                   src={`https://www.youtube.com/embed/${videoId}`}
-                  title={section.caption || 'Chapter video'}
+                  title={block?.caption || 'Chapter video'}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   className="absolute inset-0 w-full h-full"
@@ -115,13 +107,13 @@ export function ChapterAccordion({ chapters }: ChapterAccordionProps) {
                 </div>
               )}
             </div>
-            {section.caption && (
+            {block.caption && (
               <p
                 className={`text-sm italic mt-2 ${
                   theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
                 }`}
               >
-                {section.caption}
+                {block.caption}
               </p>
             )}
           </div>
@@ -139,10 +131,10 @@ export function ChapterAccordion({ chapters }: ChapterAccordionProps) {
       </h2>
 
       <Accordion type="single" collapsible className="space-y-4">
-        {chapters.map((chapter) => (
+        {chapters.map((chapter,i) => (
           <AccordionItem
-            key={chapter.id}
-            value={chapter.id}
+            key={chapter._id}
+            value={String(chapter._id)}
             className={`${
               theme === 'dark'
                 ? 'bg-slate-800 border-slate-700 data-[state=open]:border-amber-500'
@@ -150,6 +142,12 @@ export function ChapterAccordion({ chapters }: ChapterAccordionProps) {
             } rounded-lg overflow-hidden`}
           >
             <AccordionTrigger
+              onClick={(e) => {
+                const target = e.currentTarget;
+                setTimeout(() => {
+                  target.scrollIntoView({ behavior: "smooth", block: "start" });
+                }, 300);
+              }}
               className={`px-6 py-4 hover:no-underline group ${
                 theme === 'dark' ? 'data-[state=open]:bg-slate-700/50' : 'data-[state=open]:bg-slate-50'
               }`}
@@ -161,7 +159,7 @@ export function ChapterAccordion({ chapters }: ChapterAccordionProps) {
                       theme === 'dark' ? 'bg-amber-500/20' : 'bg-amber-500/10'
                     } flex items-center justify-center group-hover:bg-amber-500/30 transition-colors`}
                   >
-                    <span className="text-amber-500">{chapter.number}</span>
+                    <span className="text-amber-500">{i+1}</span>
                   </div>
                   <div>
                     <h3
@@ -177,9 +175,9 @@ export function ChapterAccordion({ chapters }: ChapterAccordionProps) {
                           theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
                         }`}
                       >
-                        {chapter.duration}
+                        {"chapter.duration"}
                       </span>
-                      {chapter.hasVideo && (
+                      {chapter?._id === "video" && (
                         <span className="flex items-center gap-1 text-sm text-amber-500">
                           <PlayCircle className="w-4 h-4" />
                           Video
@@ -192,7 +190,7 @@ export function ChapterAccordion({ chapters }: ChapterAccordionProps) {
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6 pt-2">
               <div className="pl-14">
-                {chapter.sections.map((section, index) => renderSection(section, index))}
+                {chapter?.blocks?.map((block) => renderSection(block))}
               </div>
             </AccordionContent>
           </AccordionItem>
