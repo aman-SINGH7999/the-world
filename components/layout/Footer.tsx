@@ -3,23 +3,24 @@
  * Site footer with social links, navigation, and copyright information
  */
 
+'use client'
+
 import React from 'react';
 import { Globe, Facebook, Twitter, Instagram, Youtube, Mail } from 'lucide-react';
 import { useTheme } from '../common/ThemeProvider';
+import { useRouter } from 'next/navigation';
 
-interface FooterProps {
-  onNavigate: (page: string) => void;
-}
 
-export function Footer({ onNavigate }: FooterProps) {
+export default function Footer() {
   const { theme } = useTheme();
+  const router = useRouter();
 
   const footerLinks = [
-    { name: 'Home', path: 'home' },
-    { name: 'Topics', path: 'topics' },
-    { name: 'Timeline', path: 'timeline' },
-    { name: 'Map', path: 'map' },
-    { name: 'About', path: 'about' },
+    { name: 'Home', path: '/' },
+    { name: 'Topics', path: '/topics' },
+    { name: 'Timeline', path: '/timeline' },
+    { name: 'Map', path: '/maps' },
+    { name: 'About', path: '/about' },
   ];
 
   const socialLinks = [
@@ -61,7 +62,7 @@ export function Footer({ onNavigate }: FooterProps) {
               {footerLinks.map((link) => (
                 <button
                   key={link.path}
-                  onClick={() => onNavigate(link.path)}
+                  onClick={() => router.push(link.path)}
                   className={`${
                     theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
                   } hover:text-amber-500 transition-colors text-left text-sm`}

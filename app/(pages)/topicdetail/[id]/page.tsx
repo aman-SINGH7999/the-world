@@ -2,10 +2,11 @@
  * Topic Detail Page
  * Detailed view of a single topic with chapters, media, and navigation
  */
+'use client'
 
-import React from 'react';
+import React, { useState, useEffect} from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, ArrowRight, Share2, Bookmark, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Share2, Bookmark, Clock, Calendar, Dot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -13,10 +14,14 @@ import { ChapterAccordion, Chapter } from '@/components/topic/ChapterAccordion';
 import { MediaGallery, MediaItem } from '@/components/topic/MediaGallery';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
 import { useTheme } from '@/components/common/ThemeProvider';
+import type { ITopic } from "@/lib/types";
+import axios from 'axios';
+import { formatDate } from '@/lib/utils';
+import { useParams, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 interface TopicDetailPageProps {
   topicId?: string;
-  onNavigate: (page: string, topicId?: string) => void;
 }
 
 // Mock topic data
@@ -366,16 +371,60 @@ const mockMedia: MediaItem[] = [
   },
 ];
 
-export function TopicDetailPage({ topicId, onNavigate }: TopicDetailPageProps) {
+export default function TopicDetailPage({ topicId }: TopicDetailPageProps) {
+  const [topic, setTopic] = useState<ITopic | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [path, setPath] = useState("#");
   const { theme } = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams();
+  const id = params.id;      
+  
+  console.log("Data Called")
+
+  const fetchTopicById = async ()=>{
+    try{
+      setLoading(true);
+      const { data } = await axios.get(`/api/admin/topics/${id}`)
+      console.log("DATA: ",data);
+      setTopic(data.topic);
+      console.log("Topic: ", data.topic)
+    }catch(err){
+      setError('Failed to load topic');
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    console.log("fetch data: ", id)
+    if (!id) return;
+    fetchTopicById();
+  }, [id]);
+
+
+    const handleShare = async () => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const url = `${origin}${pathname || ''}` // 👈 combine origin + pathname
+
+    try {
+      await navigator.clipboard.writeText(url)
+      alert(`✅ Link copied!\n${url}`)
+    } catch (err) {
+      console.error('Copy failed:', err)
+      alert('❌ Failed to copy link')
+    }
+  }
 
   return (
     <div className="min-h-screen pt-20">
       {/* Hero Section */}
       <div className="relative h-[60vh] flex items-end">
         <ImageWithFallback
-          src={mockTopic.image}
-          alt={mockTopic.title}
+          src={topic?.heroMediaUrl || mockTopic.image}
+          alt={topic?.title || mockTopic.title}
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div
@@ -393,13 +442,18 @@ export function TopicDetailPage({ topicId, onNavigate }: TopicDetailPageProps) {
             transition={{ duration: 0.8 }}
           >
             <div className="flex gap-3 mb-4">
-              <Badge className="bg-amber-500 text-white">{mockTopic.category}</Badge>
+              {
+                topic?.category?.map((catg, i)=>{
+                  return <Badge key={i} className="bg-amber-500 text-white">{catg || mockTopic.category}</Badge>
+                })
+              }
+              
               <Badge
                 className={
                   theme === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'
                 }
               >
-                {mockTopic.era}
+                {topic?.era || mockTopic.era}
               </Badge>
             </div>
             <h1
@@ -407,14 +461,14 @@ export function TopicDetailPage({ topicId, onNavigate }: TopicDetailPageProps) {
                 theme === 'dark' ? 'text-white' : 'text-slate-900'
               } mb-4 max-w-4xl`}
             >
-              {mockTopic.title}
+              {topic?.title || mockTopic.title}
             </h1>
             <p
               className={`text-xl ${
                 theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
               } max-w-2xl`}
             >
-              {mockTopic.subtitle}
+              {topic?.subtitle || mockTopic.subtitle}
             </p>
           </motion.div>
         </div>
@@ -439,7 +493,7 @@ export function TopicDetailPage({ topicId, onNavigate }: TopicDetailPageProps) {
                   theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
                 } leading-relaxed text-lg`}
               >
-                {mockTopic.description}
+                {topic?.overview || mockTopic.description}
               </p>
             </motion.section>
 
@@ -476,15 +530,24 @@ export function TopicDetailPage({ topicId, onNavigate }: TopicDetailPageProps) {
               <h2 className={`text-3xl ${theme === 'dark' ? 'text-white' : 'text-slate-900'} mb-6`}>
                 Sources & References
               </h2>
-              <div
-                className={`space-y-3 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}
-              >
-                <p>• Ancient Mesopotamia: Portrait of a Dead Civilization - A. Leo Oppenheim</p>
-                <p>• The Sumerians: Their History, Culture, and Character - Samuel Noah Kramer</p>
-                <p>• Mesopotamia: The Invention of the City - Gwendolyn Leick</p>
-                <p>• British Museum - Ancient Mesopotamia Collection</p>
-                <p>• University of Pennsylvania Museum of Archaeology</p>
-              </div>
+              {
+                topic?.sources?.map((source,i)=>{
+                  return  (
+                    <div key={i} className='flex flex-nowrap items-center'>
+                       <Dot size={30} />
+                      <a
+                      className={`space-y-3 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}
+                      href={source?.url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {source?.title || "N/A"}
+                    </a>
+                    </div>
+                 )
+                }) || "N/A"
+              }
+             
             </motion.section>
           </div>
 
@@ -513,16 +576,25 @@ export function TopicDetailPage({ topicId, onNavigate }: TopicDetailPageProps) {
                       theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
                     }`}
                   >
-                    <Clock className="w-5 h-5 text-amber-500" />
-                    <span>{mockTopic.duration}</span>
+                    <Calendar className="w-5 h-5 text-amber-500" />
+                    <span>{formatDate(topic?.updatedAt) || mockTopic.publishDate}</span>
                   </div>
+                  <div>
                   <div
                     className={`flex items-center gap-3 ${
                       theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
                     }`}
                   >
-                    <Calendar className="w-5 h-5 text-amber-500" />
-                    <span>{mockTopic.publishDate}</span>
+                    <Clock className="w-5 h-5 text-amber-500" />
+                    <span>Key Points</span>
+                  </div>
+                    <div className='px-6'>
+                      <ul className='list-disc flex flex-col text-xs opacity-80 gap-2 pt-3'>
+                      {topic?.keyPoints?.map((keyPoint, i) => (
+                        <li key={i}>{keyPoint}</li>
+                      ))}
+                    </ul>
+                    </div>
                   </div>
                   <Separator className={theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'} />
                   <div className="flex gap-3">
@@ -539,6 +611,7 @@ export function TopicDetailPage({ topicId, onNavigate }: TopicDetailPageProps) {
                       Save
                     </Button>
                     <Button
+                      onClick={handleShare}
                       variant="outline"
                       size="sm"
                       className={`flex-1 ${
@@ -557,7 +630,7 @@ export function TopicDetailPage({ topicId, onNavigate }: TopicDetailPageProps) {
               {/* Navigation */}
               <div className="space-y-3">
                 <Button
-                  onClick={() => onNavigate('topics')}
+                  onClick={() => router.push('/topics')}
                   variant="outline"
                   className="w-full border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-white"
                 >
@@ -565,7 +638,7 @@ export function TopicDetailPage({ topicId, onNavigate }: TopicDetailPageProps) {
                   Back to Topics
                 </Button>
                 <Button
-                  onClick={() => onNavigate('topic-detail', '2')}
+                  onClick={() => router.push(`topicdetail/${id}`)}
                   className="w-full bg-amber-500 hover:bg-amber-600 text-white"
                 >
                   Next Topic

@@ -3,15 +3,14 @@
  * Mission statement, team members, and key features
  */
 
+'use client'
+
 import React from 'react';
 import { motion } from 'motion/react';
 import { Target, Users, Sparkles, Globe, BookOpen, Compass } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { ImageWithFallback } from '@/components/figma/ImageWithFallback';
-
-interface AboutPageProps {
-  onNavigate: (page: string) => void;
-}
+import { useRouter } from 'next/navigation';
 
 const teamMembers = [
   {
@@ -59,7 +58,9 @@ const features = [
   },
 ];
 
-export function AboutPage({ onNavigate }: AboutPageProps) {
+export default function AboutPage() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen pt-32 pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -187,7 +188,7 @@ export function AboutPage({ onNavigate }: AboutPageProps) {
               Join us on a journey through the knowledge of your world. Start exploring today.
             </p>
             <button
-              onClick={() => onNavigate('topics')}
+              onClick={() => router.push('/topics')}
               className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-lg text-lg transition-all hover:scale-105"
             >
               Start Exploring

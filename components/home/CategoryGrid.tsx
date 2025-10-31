@@ -2,11 +2,13 @@
  * Category Grid Component
  * Grid display of topic categories with icons and hover effects
  */
+'use client'
 
 import React from 'react';
 import { motion } from 'motion/react';
 import { History, Telescope, Globe2, Dna, Landmark, Trees, Waves, Zap } from 'lucide-react';
 import { useTheme } from '../common/ThemeProvider';
+import { useRouter } from 'next/navigation';
 
 interface Category {
   name: string;
@@ -15,9 +17,6 @@ interface Category {
   color: string;
 }
 
-interface CategoryGridProps {
-  onNavigate: (page: string) => void;
-}
 
 const categories: Category[] = [
   { name: 'History', icon: History, count: 24, color: 'from-amber-500 to-orange-600' },
@@ -30,8 +29,9 @@ const categories: Category[] = [
   { name: 'Technology', icon: Zap, count: 17, color: 'from-yellow-500 to-amber-600' },
 ];
 
-export function CategoryGrid({ onNavigate }: CategoryGridProps) {
+export function CategoryGrid() {
   const { theme } = useTheme();
+  const router = useRouter();
 
   return (
     <section className={`py-20 ${theme === 'dark' ? 'bg-slate-950' : 'bg-white'}`}>
@@ -63,7 +63,7 @@ export function CategoryGrid({ onNavigate }: CategoryGridProps) {
                 transition={{ duration: 0.4, delay: index * 0.05 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => onNavigate('topics')}
+                onClick={() => router.push('/topics')}
                 className={`group relative overflow-hidden rounded-xl ${
                   theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'
                 } p-6 text-center border-2 hover:border-amber-500 transition-all duration-300`}

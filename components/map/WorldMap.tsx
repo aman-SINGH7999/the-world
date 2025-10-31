@@ -11,6 +11,7 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
+import { useRouter } from 'next/navigation';
 
 export interface MapMarker {
   id: string;
@@ -24,12 +25,12 @@ export interface MapMarker {
 
 interface WorldMapProps {
   markers: MapMarker[];
-  onNavigate: (page: string, topicId: string) => void;
 }
 
-export function WorldMap({ markers, onNavigate }: WorldMapProps) {
+export function WorldMap({ markers }: WorldMapProps) {
   const [hoveredMarker, setHoveredMarker] = useState<MapMarker | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
+  const router = useRouter();
 
   return (
     <div className="relative w-full h-full min-h-[600px] bg-slate-800 rounded-xl overflow-hidden border-2 border-slate-700">
@@ -138,7 +139,7 @@ export function WorldMap({ markers, onNavigate }: WorldMapProps) {
 
               <Button
                 onClick={() => {
-                  onNavigate('topic-detail', selectedMarker.topicId);
+                  router.push(`/topicdetail/${selectedMarker.topicId}`);
                   setSelectedMarker(null);
                 }}
                 className="w-full bg-amber-500 hover:bg-amber-600 text-white"

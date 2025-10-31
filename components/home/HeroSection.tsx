@@ -3,17 +3,20 @@
  * Full-width hero with background image, overlay text, and call-to-action
  */
 
+'use client'
 import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Play } from 'lucide-react';
 import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
+import { useRouter } from 'next/navigation';
 
-interface HeroSectionProps {
-  onNavigate: (page: string) => void;
-}
 
-export function HeroSection({ onNavigate }: HeroSectionProps) {
+
+
+export function HeroSection() {
+  const router = useRouter();
+
   return (
     <div className="relative h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -62,7 +65,7 @@ export function HeroSection({ onNavigate }: HeroSectionProps) {
             className="flex flex-col sm:flex-row gap-4 justify-center pt-4"
           >
             <Button
-              onClick={() => onNavigate('topics')}
+              onClick={() => router.push('topics')}
               size="lg"
               className="bg-amber-500 hover:bg-amber-600 text-white px-8 py-6 text-lg group"
             >

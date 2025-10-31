@@ -2,6 +2,7 @@
  * Topic Card Component
  * Individual topic card with image, title, summary, and hover effects
  */
+'use client'
 
 import React from 'react';
 import { motion } from 'motion/react';
@@ -9,6 +10,7 @@ import { ArrowRight, Clock, BookOpen } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
+import { useRouter } from 'next/navigation';
 
 export interface Topic {
   id: string;
@@ -23,11 +25,12 @@ export interface Topic {
 
 interface TopicCardProps {
   topic: Topic;
-  onNavigate: (page: string, topicId: string) => void;
   index?: number;
 }
 
-export function TopicCard({ topic, onNavigate, index = 0 }: TopicCardProps) {
+export function TopicCard({ topic, index = 0 }: TopicCardProps) {
+  const router = useRouter();
+  const id = "6900f16425bd9f357e22547f";
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -37,7 +40,7 @@ export function TopicCard({ topic, onNavigate, index = 0 }: TopicCardProps) {
     >
       <Card className="group overflow-hidden bg-slate-800 border-slate-700 hover:border-amber-500 transition-all duration-300 h-full flex flex-col cursor-pointer">
         <div
-          onClick={() => onNavigate('topic-detail', topic.id)}
+          onClick={() => router.push(`/topicdetail/${id}`)}
           className="relative aspect-[16/10] overflow-hidden"
         >
           <ImageWithFallback
@@ -67,7 +70,7 @@ export function TopicCard({ topic, onNavigate, index = 0 }: TopicCardProps) {
 
         <div className="p-6 flex-1 flex flex-col">
           <h3
-            onClick={() => onNavigate('topic-detail', topic.id)}
+            onClick={() => router.push(`/topicdetail/${id}`)}
             className="text-2xl text-white mb-3 group-hover:text-amber-500 transition-colors cursor-pointer"
           >
             {topic.title}
@@ -89,7 +92,7 @@ export function TopicCard({ topic, onNavigate, index = 0 }: TopicCardProps) {
 
           {/* Read More Button */}
           <button
-            onClick={() => onNavigate('topic-detail', topic.id)}
+            onClick={() => router.push(`/topicdetail/${id}`)}
             className="flex items-center gap-2 text-amber-500 hover:text-amber-400 transition-colors group/btn"
           >
             <span>Read More</span>

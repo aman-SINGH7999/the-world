@@ -2,12 +2,14 @@
  * Timeline Card Component
  * Individual event card for timeline display
  */
+'use client'
 
 import React from 'react';
 import { motion } from 'motion/react';
 import { Calendar, MapPin, ArrowRight } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { useRouter } from 'next/navigation';
 
 export interface TimelineEvent {
   id: string;
@@ -21,11 +23,11 @@ export interface TimelineEvent {
 
 interface TimelineCardProps {
   event: TimelineEvent;
-  onNavigate: (page: string, topicId?: string) => void;
   index?: number;
 }
 
-export function TimelineCard({ event, onNavigate, index = 0 }: TimelineCardProps) {
+export function TimelineCard({ event, index = 0 }: TimelineCardProps) {
+  const router = useRouter();
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -66,7 +68,7 @@ export function TimelineCard({ event, onNavigate, index = 0 }: TimelineCardProps
           {/* Learn More Link */}
           {event.topicId && (
             <button
-              onClick={() => onNavigate('topic-detail', event.topicId)}
+              onClick={() => router.push(`/topicdetail/${event.topicId}`)}
               className="flex items-center gap-2 text-amber-500 hover:text-amber-400 transition-colors group/btn text-sm"
             >
               <span>Learn More</span>

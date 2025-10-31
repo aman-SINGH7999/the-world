@@ -2,15 +2,14 @@
  * Map Page
  * Interactive world map with topic location markers
  */
+'use client'
 
 import React from 'react';
 import { motion } from 'motion/react';
 import { Globe2 } from 'lucide-react';
 import { WorldMap, MapMarker } from '@/components/map/WorldMap';
+import { useRouter } from 'next/navigation'
 
-interface MapPageProps {
-  onNavigate: (page: string, topicId?: string) => void;
-}
 
 // Mock map markers data
 const mockMarkers: MapMarker[] = [
@@ -88,7 +87,8 @@ const mockMarkers: MapMarker[] = [
   },
 ];
 
-export function MapPage({ onNavigate }: MapPageProps) {
+export default function MapPage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen pt-32 pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -129,7 +129,7 @@ export function MapPage({ onNavigate }: MapPageProps) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <WorldMap markers={mockMarkers} onNavigate={onNavigate} />
+          <WorldMap markers={mockMarkers} />
         </motion.div>
 
         {/* Instructions */}

@@ -2,6 +2,7 @@
  * Featured Carousel Component
  * Carousel displaying featured documentary topics with cinematic cards
  */
+'use client'
 
 import React from 'react';
 import { motion } from 'motion/react';
@@ -10,6 +11,7 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useTheme } from '../common/ThemeProvider';
+import { useRouter } from 'next/navigation';
 
 interface FeaturedTopic {
   id: string;
@@ -20,9 +22,7 @@ interface FeaturedTopic {
   duration: string;
 }
 
-interface FeaturedCarouselProps {
-  onNavigate: (page: string, topicId?: string) => void;
-}
+
 
 const featuredTopics: FeaturedTopic[] = [
   {
@@ -51,8 +51,9 @@ const featuredTopics: FeaturedTopic[] = [
   },
 ];
 
-export function FeaturedCarousel({ onNavigate }: FeaturedCarouselProps) {
+export function FeaturedCarousel() {
   const { theme } = useTheme();
+  const router = useRouter()
 
   return (
     <section className={`py-20 ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'}`}>
@@ -127,7 +128,7 @@ export function FeaturedCarousel({ onNavigate }: FeaturedCarouselProps) {
                   </p>
                   
                   <Button
-                    onClick={() => onNavigate('topic-detail', topic.id)}
+                    onClick={() => router.push(`/topicdetail/${topic.id}`)}
                     variant="ghost"
                     className="text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 p-0 h-auto group/btn"
                   >

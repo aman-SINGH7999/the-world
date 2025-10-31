@@ -11,9 +11,6 @@ import { Button } from '@/components/ui/button';
 import { TimelineCard, TimelineEvent } from '@/components/timeline/TimelineCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-interface TimelinePageProps {
-  onNavigate: (page: string, topicId?: string) => void;
-}
 
 // Mock timeline data
 const mockEvents: TimelineEvent[] = [
@@ -101,7 +98,7 @@ const mockEvents: TimelineEvent[] = [
   },
 ];
 
-export function TimelinePage({ onNavigate }: TimelinePageProps) {
+export default function TimelinePage() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -165,7 +162,6 @@ export function TimelinePage({ onNavigate }: TimelinePageProps) {
               <TimelineCard
                 key={event.id}
                 event={event}
-                onNavigate={onNavigate}
                 index={index}
               />
             ))}

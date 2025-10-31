@@ -10,10 +10,8 @@ import { Search } from 'lucide-react';
 import { TopicCard, Topic } from '@/components/topics/TopicCard';
 import { TopicFilters, FilterOptions } from '@/components/topics/TopicFilters';
 import { Input } from '@/components/ui/input';
+import { useRouter } from 'next/navigation';
 
-interface TopicsPageProps {
-  onNavigate: (page: string, topicId?: string) => void;
-}
 
 // Mock topics data
 const mockTopics: Topic[] = [
@@ -79,8 +77,10 @@ const mockTopics: Topic[] = [
   },
 ];
 
-export function TopicsPage({ onNavigate }: TopicsPageProps) {
+export default function TopicsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+
   const [filters, setFilters] = useState<FilterOptions>({
     categories: ['All', 'History', 'Science', 'Nature', 'Culture'],
     eras: ['All', 'Ancient', 'Medieval', 'Modern', 'Contemporary'],
@@ -184,7 +184,6 @@ export function TopicsPage({ onNavigate }: TopicsPageProps) {
                     <TopicCard
                       key={topic.id}
                       topic={topic}
-                      onNavigate={onNavigate}
                       index={index}
                     />
                   ))}

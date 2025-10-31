@@ -2,19 +2,19 @@
  * Quick Links Component
  * Call-to-action cards for Timeline and Map pages
  */
+'use client'
 
 import React from 'react';
 import { motion } from 'motion/react';
 import { Clock, MapPin, ArrowRight } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useTheme } from '../common/ThemeProvider';
+import { useRouter } from 'next/navigation';
 
-interface QuickLinksProps {
-  onNavigate: (page: string) => void;
-}
 
-export function QuickLinks({ onNavigate }: QuickLinksProps) {
+export function QuickLinks() {
   const { theme } = useTheme();
+  const router = useRouter();
 
   return (
     <section className={`py-20 ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'}`}>
@@ -43,7 +43,7 @@ export function QuickLinks({ onNavigate }: QuickLinksProps) {
                 Journey through history with our visual timeline. Explore key events and their connections across civilizations and eras.
               </p>
               <Button
-                onClick={() => onNavigate('timeline')}
+                onClick={() => router.push('/timeline')}
                 className="bg-amber-500 hover:bg-amber-600 text-white group/btn"
               >
                 Explore Timeline
@@ -78,7 +78,7 @@ export function QuickLinks({ onNavigate }: QuickLinksProps) {
                 Discover knowledge geographically. Navigate our interactive world map to find topics by location and explore global connections.
               </p>
               <Button
-                onClick={() => onNavigate('map')}
+                onClick={() => router.push('/map')}
                 className="bg-amber-500 hover:bg-amber-600 text-white group/btn"
               >
                 Explore Map

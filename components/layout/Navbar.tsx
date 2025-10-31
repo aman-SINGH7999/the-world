@@ -8,16 +8,16 @@ import React, { useState, useEffect } from 'react';
 import { Menu, X, Globe, Sun, Moon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useTheme } from '../common/ThemeProvider';
+import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
-interface NavbarProps {
-  currentPage: string;
-  onNavigate: (page: string) => void;
-}
 
-export function Navbar({ currentPage, onNavigate }: NavbarProps) {
+export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const router = useRouter();
+  const path = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,11 +29,11 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
   }, []);
 
   const navLinks = [
-    { name: 'Home', path: 'home' },
-    { name: 'Topics', path: 'topics' },
-    { name: 'Timeline', path: 'timeline' },
-    { name: 'Map', path: 'map' },
-    { name: 'About', path: 'about' },
+    { name: 'Home', path: '/' },
+    { name: 'Topics', path: '/topics' },
+    { name: 'Timeline', path: '/timeline' },
+    { name: 'Map', path: '/maps' },
+    { name: 'About', path: '/about' },
   ];
 
   return (
@@ -50,7 +50,7 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <button
-            onClick={() => onNavigate('home')}
+            onClick={() => router.push('/home')}
             className="flex items-center gap-3 group transition-transform hover:scale-105"
           >
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center">
@@ -73,9 +73,9 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
             {navLinks.map((link) => (
               <button
                 key={link.path}
-                onClick={() => onNavigate(link.path)}
+                onClick={() => router.push(link.path)}
                 className={`relative transition-colors ${
-                  currentPage === link.path
+                  path === link.path
                     ? 'text-amber-500'
                     : theme === 'dark'
                     ? 'text-slate-300 hover:text-amber-500'
@@ -83,7 +83,7 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
                 }`}
               >
                 {link.name}
-                {currentPage === link.path && (
+                {path === link.path && (
                   <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-amber-500 rounded-full" />
                 )}
               </button>
@@ -141,11 +141,11 @@ export function Navbar({ currentPage, onNavigate }: NavbarProps) {
                 <button
                   key={link.path}
                   onClick={() => {
-                    onNavigate(link.path);
+                    router.push(link.path);
                     setIsMobileMenuOpen(false);
                   }}
                   className={`text-left px-4 py-2 rounded-lg transition-colors ${
-                    currentPage === link.path
+                    path === link.path
                       ? 'bg-amber-500/10 text-amber-500'
                       : theme === 'dark'
                       ? 'text-slate-300 hover:bg-slate-800 hover:text-amber-500'
