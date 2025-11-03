@@ -1,203 +1,217 @@
-/**
- * Topics Page
- * Grid/list of all topics with filtering capabilities
- */
-'use client'
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import { motion } from 'motion/react';
-import { Search } from 'lucide-react';
-import { TopicCard, Topic } from '@/components/topics/TopicCard';
-import { TopicFilters, FilterOptions } from '@/components/topics/TopicFilters';
-import { Input } from '@/components/ui/input';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { motion } from "motion/react";
+import { Search } from "lucide-react";
+import { ITopic } from "@/lib/types";
+import { TopicCard } from "@/components/topics/TopicCard";
+import { TopicFilters, FilterOptions } from "@/components/topics/TopicFilters";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
-
-// Mock topics data
-const mockTopics: Topic[] = [
-  {
-    id: '1',
-    title: 'Ancient Civilizations of Mesopotamia',
-    summary: 'Discover the cradle of civilization and the remarkable achievements of ancient Mesopotamian cultures including Sumerians, Babylonians, and Assyrians.',
-    image: 'https://images.unsplash.com/photo-1717606344894-66e5696bcd18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmNpZW50JTIwY2l2aWxpemF0aW9uJTIwaGlzdG9yeXxlbnwxfHx8fDE3NjEyODc1OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    category: 'History',
-    duration: '45 min',
-    chapters: 6,
-    era: 'Ancient',
-  },
-  {
-    id: '2',
-    title: 'The African Savanna Ecosystem',
-    summary: 'Explore the rich biodiversity and complex ecological relationships in Africa\'s iconic grassland biome.',
-    image: 'https://images.unsplash.com/photo-1719743441581-632023e3d2ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjB3aWxkbGlmZSUyMGRvY3VtZW50YXJ5fGVufDF8fHx8MTc2MTI4NzU5M3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    category: 'Nature',
-    duration: '60 min',
-    chapters: 8,
-    era: 'Contemporary',
-  },
-  {
-    id: '3',
-    title: 'Journey Through the Cosmos',
-    summary: 'An exploration of our universe from the Big Bang to black holes, revealing the wonders of space and time.',
-    image: 'https://images.unsplash.com/photo-1614777959970-6774563e87f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGFjZSUyMGFzdHJvbm9teSUyMGNvc21vc3xlbnwxfHx8fDE3NjEyODc1OTN8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    category: 'Science',
-    duration: '50 min',
-    chapters: 7,
-    era: 'Contemporary',
-  },
-  {
-    id: '4',
-    title: 'The Renaissance Revolution',
-    summary: 'Witness the rebirth of art, science, and culture that transformed Europe and shaped the modern world.',
-    image: 'https://images.unsplash.com/photo-1632670468093-6e7a07ae9848?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkb2N1bWVudGFyeSUyMGZpbG0lMjBwcm9kdWN0aW9ufGVufDF8fHx8MTc2MTI4NzU5Mnww&ixlib=rb-4.1.0&q=80&w=1080',
-    category: 'Culture',
-    duration: '55 min',
-    chapters: 5,
-    era: 'Medieval',
-  },
-  {
-    id: '5',
-    title: 'Oceans: The Last Frontier',
-    summary: 'Dive deep into Earth\'s oceans to discover mysterious creatures and unexplored underwater worlds.',
-    image: 'https://images.unsplash.com/photo-1760493828288-d2dbb70d18c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzY2llbmNlJTIwdGVjaG5vbG9neSUyMGlubm92YXRpb258ZW58MXx8fHwxNzYxMjg3NTkzfDA&ixlib=rb-4.1.0&q=80&w=1080',
-    category: 'Science',
-    duration: '48 min',
-    chapters: 6,
-    era: 'Contemporary',
-  },
-  {
-    id: '6',
-    title: 'The Silk Road Chronicles',
-    summary: 'Follow the ancient trade routes that connected East and West, facilitating commerce, culture, and ideas.',
-    image: 'https://images.unsplash.com/photo-1717606344894-66e5696bcd18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmNpZW50JTIwY2l2aWxpemF0aW9uJTIwaGlzdG9yeXxlbnwxfHx8fDE3NjEyODc1OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    category: 'History',
-    duration: '52 min',
-    chapters: 7,
-    era: 'Ancient',
-  },
-];
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 export default function TopicsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [era, setEra] = useState("");
+  const [category, setCategory] = useState("");
+  const [topics, setTopics] = useState<ITopic[]>([]);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(6);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+
   const router = useRouter();
 
+  // filters for TopicFilters component (local)
   const [filters, setFilters] = useState<FilterOptions>({
-    categories: ['All', 'History', 'Science', 'Nature', 'Culture'],
-    eras: ['All', 'Ancient', 'Medieval', 'Modern', 'Contemporary'],
-    selectedCategory: 'All',
-    selectedEra: 'All',
+    categories: ["All", "History", "Science", "Nature", "Culture"],
+    eras: ["All", "Ancient", "Medieval", "Modern", "Contemporary"],
+    selectedCategory: "All",
+    selectedEra: "All",
   });
 
-  const handleFilterChange = (filterType: 'category' | 'era', value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [filterType === 'category' ? 'selectedCategory' : 'selectedEra']: value,
-    }));
+  // Debounce search input (400ms)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // build params for server request
+  const buildParams = useCallback(
+    (p = page) => {
+      const params: Record<string, string | number> = {
+        page: p,
+        limit,
+      };
+      if (debouncedQuery) params.q = debouncedQuery;
+      if (era) params.era = era;
+      if (category) params.category = category;
+      return params;
+    },
+    [debouncedQuery, era, category, page, limit]
+  );
+
+  // fetch topics from server
+  const fetchTopics = useCallback(
+    async (p = 1) => {
+      try {
+        setLoading(true);
+        const params = buildParams(p);
+        const { data } = await axios.get("/api/admin/topics", { params });
+        setTopics(Array.isArray(data?.topics) ? data.topics : []);
+        setPage(Number(data?.page || p));
+        setTotalPages(Number(data?.totalPages || 1));
+        setTotal(Number(data?.total || 0));
+      } catch (err) {
+        console.error("Failed to fetch topics", err);
+        setTopics([]);
+        setTotalPages(1);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [buildParams]
+  );
+
+  // initial load + when debouncedQuery / era / category change -> go to page 1
+  useEffect(() => {
+    setPage(1);
+    fetchTopics(1);
+  }, [debouncedQuery, era, category, fetchTopics]);
+
+  // when page changes (by pagination UI), fetch that page
+  useEffect(() => {
+    fetchTopics(page);
+  }, [page, fetchTopics]);
+
+  // handlers for TopicFilters
+  const handleFilterChange = (filterType: "category" | "era", value: string) => {
+    if (filterType === "category") {
+      setFilters((prev) => ({ ...prev, selectedCategory: value }));
+      setCategory(value === "All" ? "" : value);
+    } else {
+      setFilters((prev) => ({ ...prev, selectedEra: value }));
+      setEra(value === "All" ? "" : value);
+    }
   };
 
   const handleClearFilters = () => {
-    setFilters((prev) => ({
-      ...prev,
-      selectedCategory: 'All',
-      selectedEra: 'All',
-    }));
-    setSearchQuery('');
+    setFilters((prev) => ({ ...prev, selectedCategory: "All", selectedEra: "All" }));
+    setCategory("");
+    setEra("");
+    setSearchQuery("");
   };
 
-  const filteredTopics = useMemo(() => {
-    return mockTopics.filter((topic) => {
-      const matchesSearch = topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        topic.summary.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = filters.selectedCategory === 'All' || topic.category === filters.selectedCategory;
-      const matchesEra = filters.selectedEra === 'All' || topic.era === filters.selectedEra;
+  // Pagination helpers (render numeric pages compactly)
+  const paginationRange = useMemo(() => {
+    const current = page;
+    const last = totalPages;
+    const delta = 2;
+    const range: (number | "...")[] = [];
+    let l = 0;
+    for (let i = 1; i <= last; i++) {
+      if (i === 1 || i === last || (i >= current - delta && i <= current + delta)) {
+        if (l + 1 !== i) {
+          if (range[range.length - 1] !== "...") range.push("...");
+        }
+        range.push(i);
+        l = i;
+      }
+    }
+    return range;
+  }, [page, totalPages]);
 
-      return matchesSearch && matchesCategory && matchesEra;
-    });
-  }, [searchQuery, filters]);
+  const goToPage = (p: number) => {
+    if (p < 1) p = 1;
+    if (p > totalPages) p = totalPages;
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="min-h-screen pt-32 pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center mb-12">
           <h1 className="text-5xl sm:text-6xl text-white mb-4">Explore Topics</h1>
-          <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            Discover fascinating stories from history, science, nature, and culture
-          </p>
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto">Discover fascinating stories from history, science, nature, and culture</p>
         </motion.div>
 
         {/* Search Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="mb-8">
           <div className="relative max-w-2xl mx-auto">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <Input
-              type="text"
-              placeholder="Search topics..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 py-6 bg-slate-800 border-slate-700 text-white placeholder:text-slate-400 focus:border-amber-500"
-            />
+            <Input type="text" placeholder="Search topics..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-12 py-6 bg-slate-800 border-slate-700 text-white placeholder:text-slate-400 focus:border-amber-500" />
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar Filters */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-1"
-          >
-            <TopicFilters
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              onClearFilters={handleClearFilters}
-            />
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="lg:col-span-1">
+            <TopicFilters filters={filters} onFilterChange={handleFilterChange} onClearFilters={handleClearFilters} />
           </motion.div>
 
           {/* Topics Grid */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-3"
-          >
-            {filteredTopics.length > 0 ? (
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="lg:col-span-3">
+            {/* Summary + results */}
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-slate-400">
+                Showing {topics.length} of {total} {total === 1 ? "topic" : "topics"}
+              </p>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-20 text-slate-400">Loading topics…</div>
+            ) : topics.length > 0 ? (
               <>
-                <div className="flex items-center justify-between mb-6">
-                  <p className="text-slate-400">
-                    Showing {filteredTopics.length} {filteredTopics.length === 1 ? 'topic' : 'topics'}
-                  </p>
-                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {filteredTopics.map((topic, index) => (
-                    <TopicCard
-                      key={topic.id}
-                      topic={topic}
-                      index={index}
-                    />
+                  {topics.map((topic, index) => (
+                    <TopicCard key={String(topic._id)} topic={topic} index={index} />
                   ))}
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-8">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationPrevious onClick={() => goToPage(page - 1)} aria-disabled={page <= 1} />
+                        {paginationRange.map((p, idx) =>
+                          p === "..." ? (
+                            <PaginationItem key={`ellipsis-${idx}`}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          ) : (
+                            <PaginationItem key={p}>
+                              <PaginationLink onClick={() => goToPage(Number(p))} isActive={p === page} href="#" >
+                                {p}
+                              </PaginationLink>
+                            </PaginationItem>
+                          )
+                        )}
+                        <PaginationNext onClick={() => goToPage(page + 1)} aria-disabled={page >= totalPages} />
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
               </>
             ) : (
               <div className="text-center py-20">
                 <p className="text-xl text-slate-400">No topics found matching your criteria.</p>
-                <button
-                  onClick={handleClearFilters}
-                  className="mt-4 text-amber-500 hover:text-amber-400 underline"
-                >
-                  Clear all filters
-                </button>
+                <button onClick={handleClearFilters} className="mt-4 text-amber-500 hover:text-amber-400 underline">Clear all filters</button>
               </div>
             )}
           </motion.div>
