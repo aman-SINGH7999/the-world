@@ -15,3 +15,20 @@ export function formatDate(dateString?: string): string {
     day: "numeric",
   });
 }
+
+
+export function isValidImageSrc(src?: string) {
+  if (!src || typeof src !== "string") return false;
+  const trimmed = src.trim();
+  if (!trimmed) return false;
+
+  if (trimmed.startsWith("/")) return true; // root-relative
+
+  try {
+    const url = new URL(trimmed);
+    return ["http:", "https:", "data:"].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+

@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import axios from "axios"
-import { useRouter } from "next/navigation"
+import { useRouter  } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/components/toast"
 import { LogIn, Sun, Moon, Eye, EyeOff, Loader2 } from "lucide-react"
@@ -16,8 +16,9 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const { login } = useAuth()
+  const { isAuthenticated, login } = useAuth()
   const { addToast } = useToast()
+
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
 
@@ -28,6 +29,15 @@ export default function LoginPage() {
     if (!password || password.length < 6) return "Password must be at least 6 characters"
     return null
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+      if (isAuthenticated) router.replace("/admin/dashboard");
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

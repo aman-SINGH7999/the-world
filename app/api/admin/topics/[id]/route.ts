@@ -155,6 +155,13 @@ async function handlePUT(
       }
     }
 
+    // --- NEW: timeline/era/location/metaTitle/metaDescription ---
+    if (typeof body.timeline === "string") update.timeline = body.timeline;
+    if (typeof body.era === "string") update.era = body.era;
+    if (typeof body.location === "string") update.location = body.location;
+    if (typeof body.metaTitle === "string") update.metaTitle = body.metaTitle;
+    if (typeof body.metaDescription === "string") update.metaDescription = body.metaDescription;
+
     if (typeof body.summary === "string") update.summary = body.summary;
     if (typeof body.overview === "string") update.overview = body.overview;
     if (typeof body.subtitle === "string") update.subtitle = body.subtitle;
@@ -204,6 +211,51 @@ async function handlePUT(
   }
 }
 
+
+// ---------- PATCH (archive topic) ----------
+async function handlePATCH(
+  request: NextRequest,
+  context?: { params?: Record<string, string> }
+) {
+  try {
+    await connectDB();
+    const user = (request as unknown as { user?: { userId?: string } }).user;
+
+    const id = context?.params?.id;
+    if (!id) {
+      return NextResponse.json({ error: "Missing topic id" }, { status: 400 });
+    }
+
+    // Find topic
+    const topic = await Topic.findById(id);
+    if (!topic) {
+      return NextResponse.json({ error: "Topic not found" }, { status: 404 });
+    }
+
+    // Update only the status
+    topic.status = "archived";
+    topic.updatedBy = user?.userId
+      ? new mongoose.mongo.ObjectId(user.userId)
+      : topic.updatedBy;
+    topic.updatedAt = new Date();
+    topic.revisionNumber = (topic.revisionNumber || 0) + 1;
+
+    await topic.save();
+
+    return NextResponse.json(
+      { message: "Topic archived successfully", topic },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error("[Topic PATCH Error]", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+
+
+
 /** Exported handlers */
 export const GET = handleGET;
 export const PUT = withAdminRole(handlePUT);  // ✅ clean type match
+export const PATCH = withAdminRole(handlePATCH);

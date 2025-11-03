@@ -11,20 +11,12 @@ import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useRouter } from 'next/navigation';
+import { ITopic } from '@/lib/types';
 
-export interface Topic {
-  id: string;
-  title: string;
-  summary: string;
-  image: string;
-  category: string;
-  duration: string;
-  chapters: number;
-  era?: string;
-}
+
 
 interface TopicCardProps {
-  topic: Topic;
+  topic: ITopic;
   index?: number;
 }
 
@@ -40,11 +32,11 @@ export function TopicCard({ topic, index = 0 }: TopicCardProps) {
     >
       <Card className="group overflow-hidden bg-slate-800 border-slate-700 hover:border-amber-500 transition-all duration-300 h-full flex flex-col cursor-pointer">
         <div
-          onClick={() => router.push(`/topicdetail/${id}`)}
+          onClick={() => router.push(`/topicdetail/${topic._id}`)}
           className="relative aspect-[16/10] overflow-hidden"
         >
           <ImageWithFallback
-            src={topic.image}
+            src={topic.heroMediaUrl}
             alt={topic.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
@@ -53,9 +45,15 @@ export function TopicCard({ topic, index = 0 }: TopicCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
           
           {/* Category Badge */}
-          <Badge className="absolute top-4 left-4 bg-amber-500 hover:bg-amber-600 text-white border-0">
-            {topic.category}
-          </Badge>
+          {
+            topic?.category?.map((cat, i)=>  {
+              return (
+              <Badge key={i} className="absolute top-4 left-4 bg-amber-500 hover:bg-amber-600 text-white border-0">
+                {cat}
+              </Badge>
+              )})
+          }
+          
 
           {/* Era Badge (if available) */}
           {topic.era && (
@@ -70,7 +68,7 @@ export function TopicCard({ topic, index = 0 }: TopicCardProps) {
 
         <div className="p-6 flex-1 flex flex-col">
           <h3
-            onClick={() => router.push(`/topicdetail/${id}`)}
+            onClick={() => router.push(`/topicdetail/${topic._id}`)}
             className="text-2xl text-white mb-3 group-hover:text-amber-500 transition-colors cursor-pointer"
           >
             {topic.title}
@@ -82,17 +80,17 @@ export function TopicCard({ topic, index = 0 }: TopicCardProps) {
           <div className="flex items-center gap-4 text-sm text-slate-500 mb-4">
             <div className="flex items-center gap-1">
               <Clock className="w-4 h-4" />
-              <span>{topic.duration}</span>
+              <span>{45}</span>
             </div>
             <div className="flex items-center gap-1">
               <BookOpen className="w-4 h-4" />
-              <span>{topic.chapters} Chapters</span>
+              <span>{6} Chapters</span>
             </div>
           </div>
 
           {/* Read More Button */}
           <button
-            onClick={() => router.push(`/topicdetail/${id}`)}
+            onClick={() => router.push(`/topicdetail/${topic._id}`)}
             className="flex items-center gap-2 text-amber-500 hover:text-amber-400 transition-colors group/btn"
           >
             <span>Read More</span>

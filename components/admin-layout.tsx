@@ -30,8 +30,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b border-border">
-            <h1 className="text-2xl font-bold text-primary">WorldDoc</h1>
+          <div className="h-30 px-10 py-3 flex items-end border-b border-border">
+            {/* <h1 className="text-2xl font-bold text-primary">WorldDoc</h1> */}
             <p className="text-sm text-muted-foreground">Admin Panel</p>
           </div>
 
@@ -64,7 +64,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="border-b border-border px-4 py-4 flex items-center justify-between lg:justify-end">
+        <header className="border-b border-border px-4 pt-3 pb-10 flex items-center justify-between lg:justify-end">
           
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -74,14 +74,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           
-          <div className="text-sm text-muted-foreground flex items-center gap-3">
-            <button
+          <div className="text-xs text-muted-foreground flex items-center gap-3">
+            {/* <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
               className=" rounded-full  shadow-sm"
             >
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+            </button> */}
             {new Date().toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",

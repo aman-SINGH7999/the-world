@@ -13,6 +13,7 @@ import { ChapterEditor } from "./chapter-editor"
 import { Plus } from "lucide-react"
 import axios from "axios"
 import Image from "next/image"
+import { isValidImageSrc } from "@/lib/utils"
 
 
 interface TopicFormProps {
@@ -45,6 +46,8 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
         ? initialTopic.chapters
         : [{ title: "Chapter 1", blocks: [] }],
     status: initialTopic?.status || "draft",
+    metaTitle: initialTopic?.metaTitle || "",
+    metaDescription: initialTopic?.metaDescription || "",
   })
 
   const handleInputChange = <K extends keyof ITopic>(field: K, value: ITopic[K]) => {
@@ -147,17 +150,29 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
             />
           </div>
 
+          {/* category */}
+          <TagInput
+            label="Category"
+            value={formData.category || []}
+            onChange={(category) => handleInputChange("category", category)}
+          />
+
           {/* Era + Location */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col">
               <label className="font-medium mb-1">Era</label>
-              <input
-                type="text"
+              <select
                 value={formData.era || ""}
                 onChange={(e) => handleInputChange("era", e.target.value)}
-                placeholder="e.g., 1989"
-                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-              />
+                className="border  rounded-lg px-4 py-2 focus:ring-2"
+              >
+                <option className="bg-white/20 text-gray-600" value="">Select Era</option>
+                <option className="bg-white/20 text-gray-600" value="Ancient">Ancient</option>
+                <option className="bg-white/20 text-gray-600" value="Medieval">Medieval</option>
+                <option className="bg-white/20 text-gray-600" value="Modern">Modern</option>
+                <option className="bg-white/20 text-gray-600" value="Contemporary">Contemporary</option>
+              </select>
+
             </div>
             <div className="flex flex-col">
               <label className="font-medium mb-1">Location</label>
@@ -214,11 +229,7 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
           </div>
 
           {/* Tags */}
-          <TagInput
-            label="Category"
-            value={formData.category || []}
-            onChange={(category) => handleInputChange("category", category)}
-          />
+
           <TagInput
             label="Key Points"
             value={formData.keyPoints || []}
@@ -243,17 +254,27 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
         {formData.heroMediaUrl && (
           <div className="mt-4">
             <p className="text-sm text-gray-600 mb-2">Preview:</p>
-            <div className="relative w-full max-w-md h-64">
-              <Image
-                src={formData.heroMediaUrl}
-                alt="Hero preview"
-                fill
-                className="object-cover rounded-lg border border-gray-300"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            </div>
+
+            {isValidImageSrc(formData.heroMediaUrl) ? (
+              <div className="relative w-full max-w-md h-64">
+                <Image
+                  src={formData.heroMediaUrl!.trim()}
+                  alt="Hero preview"
+                  fill
+                  className="object-cover rounded-lg border border-gray-300"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  // optional: unoptimized if you can't/ don't want to configure domains
+                  // unoptimized
+                />
+              </div>
+            ) : (
+              <div className="w-full max-w-md h-64 flex items-center justify-center rounded-lg border border-gray-300 bg-gray-50">
+                <p className="text-sm text-muted-foreground">Invalid image URL</p>
+              </div>
+            )}
           </div>
         )}
+
 
       </section>
 
@@ -302,6 +323,36 @@ export function TopicForm({ initialTopic }: TopicFormProps) {
           <Plus size={16} />
           Add Chapter
         </button>
+      </section>
+
+      {/* SEO */}
+      <section className="shadow-md rounded-xl p-6">
+        <h2 className="text-2xl font-semibold mb-6">Meta Data</h2>
+        <div className="space-y-5">
+          {/* Summary */}
+          <div className="flex flex-col">
+            <label className="font-medium mb-1">Meta Title</label>
+            <input
+              type="text"
+              value={formData.metaTitle || ""}
+              onChange={(e) => handleInputChange("metaTitle", e.target.value)}
+              placeholder="Enter meta title"
+              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+
+          {/* Overview */}
+          <div className="flex flex-col">
+            <label className="font-medium mb-1">Meta Description</label>
+            <textarea
+              value={formData.metaDescription || ""}
+              onChange={(e) => handleInputChange("metaDescription", e.target.value)}
+              placeholder="Meta description"
+              rows={3}
+              className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-400 resize-none"
+            />
+          </div>
+          </div>
       </section>
 
       {/* Actions */}

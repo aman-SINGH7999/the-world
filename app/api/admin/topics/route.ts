@@ -52,7 +52,7 @@ async function handleGET(request: NextRequest) {
 
     const total = await Topic.countDocuments(query);
     const topics = await Topic.find(query)
-      .select("_id title slug summary status publishedAt createdAt updatedAt")
+      .select("_id title slug summary status heroMediaUrl category era publishedAt createdAt updatedAt")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -81,6 +81,9 @@ async function handlePOST(request: NextRequest) {
       summary,
       overview,
       subtitle,
+      timeline,
+      era,
+      location,
       chapters = [],
       sources = [],
       keyPoints = [],
@@ -153,6 +156,9 @@ async function handlePOST(request: NextRequest) {
       summary,
       overview,
       subtitle,
+      timeline,
+      era,
+      location,
       chapters: normalizedChapters,
       sources: cleanSources,
       keyPoints,
