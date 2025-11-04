@@ -36,7 +36,7 @@ export default function TopicsPage() {
 
   // filters for TopicFilters component (local)
   const [filters, setFilters] = useState<FilterOptions>({
-    categories: ["All", "History", "Science", "Nature", "Culture"],
+    categories: ["All", "History", "Science", "Nature", "Culture", "Geography", "Biology", "Oceans", "Technology"],
     eras: ["All", "Ancient", "Medieval", "Modern", "Contemporary"],
     selectedCategory: "All",
     selectedEra: "All",

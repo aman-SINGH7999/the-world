@@ -182,7 +182,7 @@ export default function TopicsPage() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left px-4 py-3 font-semibold text-foreground">Title</th>
-                  <th className="text-left px-4 py-3 font-semibold text-foreground">Slug</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground">Category</th>
                   <th className="text-left px-4 py-3 font-semibold text-foreground">Status</th>
                   <th className="text-left px-4 py-3 font-semibold text-foreground">Updated</th>
                   <th className="text-right px-4 py-3 font-semibold text-foreground">Actions</th>
@@ -194,7 +194,11 @@ export default function TopicsPage() {
                   return (
                     <tr key={topic._id!.toString()} className="border-b border-border hover:bg-muted transition-colors">
                       <td className="px-4 py-3 text-foreground font-medium">{topic.title}</td>
-                      <td className="px-4 py-3 text-muted-foreground text-sm">{topic.slug}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-sm flex flex-wrap items-center">
+                        {
+                          topic?.category?.map((cat,i)=> <div key={i} className="mr-1 opacity-90">{cat}, </div>)
+                        }
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${

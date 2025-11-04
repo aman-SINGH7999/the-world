@@ -4,7 +4,7 @@
  */
 'use client'
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Clock } from 'lucide-react';
 import { Card } from '../ui/card';
@@ -12,12 +12,14 @@ import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useTheme } from '../common/ThemeProvider';
 import { useRouter } from 'next/navigation';
+import { ITopic } from '@/lib/types';
+import axios from 'axios';
 
 interface FeaturedTopic {
-  id: string;
+  _id: string;
   title: string;
   description: string;
-  image: string;
+  heroMediaUrl: string;
   category: string;
   duration: string;
 }
@@ -26,34 +28,54 @@ interface FeaturedTopic {
 
 const featuredTopics: FeaturedTopic[] = [
   {
-    id: '1',
+    _id: '1',
     title: 'Ancient Civilizations',
     description: 'Explore the rise and fall of the world\'s greatest ancient empires',
-    image: 'https://images.unsplash.com/photo-1717606344894-66e5696bcd18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmNpZW50JTIwY2l2aWxpemF0aW9uJTIwaGlzdG9yeXxlbnwxfHx8fDE3NjEyODc1OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    heroMediaUrl: 'https://images.unsplash.com/photo-1717606344894-66e5696bcd18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmNpZW50JTIwY2l2aWxpemF0aW9uJTIwaGlzdG9yeXxlbnwxfHx8fDE3NjEyODc1OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
     category: 'History',
     duration: '45 min',
   },
   {
-    id: '2',
+    _id: '2',
     title: 'Wildlife of the Savanna',
     description: 'Journey into the heart of Africa\'s most incredible ecosystems',
-    image: 'https://images.unsplash.com/photo-1719743441581-632023e3d2ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjB3aWxkbGlmZSUyMGRvY3VtZW50YXJ5fGVufDF8fHx8MTc2MTI4NzU5M3ww&ixlib=rb-4.1.0&q=80&w=1080',
+    heroMediaUrl: 'https://images.unsplash.com/photo-1719743441581-632023e3d2ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjB3aWxkbGlmZSUyMGRvY3VtZW50YXJ5fGVufDF8fHx8MTc2MTI4NzU5M3ww&ixlib=rb-4.1.0&q=80&w=1080',
     category: 'Nature',
     duration: '60 min',
   },
   {
-    id: '3',
+    _id: '3',
     title: 'The Cosmos Unveiled',
     description: 'Discover the mysteries of space, stars, and the universe beyond',
-    image: 'https://images.unsplash.com/photo-1614777959970-6774563e87f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGFjZSUyMGFzdHJvbm9teSUyMGNvc21vc3xlbnwxfHx8fDE3NjEyODc1OTN8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    heroMediaUrl: 'https://images.unsplash.com/photo-1614777959970-6774563e87f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcGFjZSUyMGFzdHJvbm9teSUyMGNvc21vc3xlbnwxfHx8fDE3NjEyODc1OTN8MA&ixlib=rb-4.1.0&q=80&w=1080',
     category: 'Science',
     duration: '50 min',
   },
 ];
 
 export function FeaturedCarousel() {
+  const [topics, setTopics] = useState<ITopic[]>([]);
+  const [loading, setLoading] = useState(false);
   const { theme } = useTheme();
   const router = useRouter()
+
+    const fetchTopics = async () => {
+      try {
+        setLoading(true);
+        const { data } = await axios.get("/api/admin/topics/?limit=3");
+        setTopics(Array.isArray(data?.topics) ? data.topics : []);
+        
+      } catch (err) {
+        console.error("Failed to fetch topics", err);
+        setTopics([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    useEffect(()=>{
+      fetchTopics();
+    }, [])
 
   return (
     <section className={`py-20 ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'}`}>
@@ -74,9 +96,9 @@ export function FeaturedCarousel() {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredTopics.map((topic, index) => (
+          {topics?.map((topic, index) => (
             <motion.div
-              key={topic.id}
+              key={topic._id}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -89,7 +111,7 @@ export function FeaturedCarousel() {
               } hover:border-amber-500 transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/20`}>
                 <div className="relative aspect-[16/9] overflow-hidden">
                   <ImageWithFallback
-                    src={topic.image}
+                    src={topic.heroMediaUrl}
                     alt={topic.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
@@ -112,7 +134,7 @@ export function FeaturedCarousel() {
                   } px-2 py-1 rounded`}>
                     <Clock className="w-4 h-4 text-amber-500" />
                     <span className={theme === 'dark' ? 'text-white text-sm' : 'text-slate-900 text-sm'}>
-                      {topic.duration}
+                      {45}
                     </span>
                   </div>
                 </div>
@@ -124,11 +146,11 @@ export function FeaturedCarousel() {
                     {topic.title}
                   </h3>
                   <p className={theme === 'dark' ? 'text-slate-400 mb-4' : 'text-slate-600 mb-4'}>
-                    {topic.description}
+                    {topic.overview}
                   </p>
                   
                   <Button
-                    onClick={() => router.push(`/topicdetail/${topic.id}`)}
+                    onClick={() => router.push(`/topicdetail/${topic._id}`)}
                     variant="ghost"
                     className="text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 p-0 h-auto group/btn"
                   >

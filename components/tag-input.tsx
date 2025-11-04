@@ -42,7 +42,7 @@ export function TagInput({
   }
 
   // Predefined options for category
-  const categoryOptions = ["History", "Science", "Nature", "Culture"]
+  const categoryOptions = ["History", "Science", "Nature", "Culture", "Geography", "Biology", "Oceans", "Technology"]
 
   return (
     <div className="input-group">

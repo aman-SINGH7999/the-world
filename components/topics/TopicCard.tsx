@@ -45,15 +45,16 @@ export function TopicCard({ topic, index = 0 }: TopicCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
           
           {/* Category Badge */}
+          <div className='absolute top-4 left-4'>
           {
             topic?.category?.map((cat, i)=>  {
               return (
-              <Badge key={i} className="absolute top-4 left-4 bg-amber-500 hover:bg-amber-600 text-white border-0">
+              <Badge key={i} className="bg-amber-500 hover:bg-amber-600 m-0.5 text-white border-0">
                 {cat}
               </Badge>
               )})
           }
-          
+          </div>
 
           {/* Era Badge (if available) */}
           {topic.era && (

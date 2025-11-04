@@ -12,22 +12,16 @@ import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useTheme } from '../common/ThemeProvider';
+import { IMediaItem } from '@/lib/utils';
 
-export interface MediaItem {
-  id: string;
-  type: 'image' | 'video' | 'audio';
-  url: string;
-  thumbnail?: string;
-  title: string;
-  description?: string;
-}
 
+type MediaTab = 'all' | 'image' | 'video' | 'audio';
 interface MediaGalleryProps {
-  media: MediaItem[];
+  media: IMediaItem[];
 }
 
 export function MediaGallery({ media }: MediaGalleryProps) {
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<IMediaItem | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'image' | 'video' | 'audio'>('all');
   const { theme } = useTheme();
 
@@ -53,6 +47,16 @@ export function MediaGallery({ media }: MediaGalleryProps) {
     }
   };
 
+    // Strict handler: validate and set only known tabs
+  const handleTabChange = (value: string) => {
+    if (value === 'all' || value === 'image' || value === 'video' || value === 'audio') {
+      setActiveTab(value);
+    } else {
+      // ignore unknown values (or handle fallback)
+      // console.warn(`Unknown tab value: ${value}`);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -72,7 +76,7 @@ export function MediaGallery({ media }: MediaGalleryProps) {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList
           className={
             theme === 'dark'
@@ -126,7 +130,7 @@ export function MediaGallery({ media }: MediaGalleryProps) {
                   {item.type === 'image' && (
                     <ImageWithFallback
                       src={item.url}
-                      alt={item.title}
+                      alt={item?.title || ""}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
                   )}
@@ -210,7 +214,7 @@ export function MediaGallery({ media }: MediaGalleryProps) {
                 {selectedMedia.type === 'image' && (
                   <ImageWithFallback
                     src={selectedMedia.url}
-                    alt={selectedMedia.title}
+                    alt={selectedMedia?.title || ""}
                     className="w-full h-full object-contain"
                   />
                 )}
